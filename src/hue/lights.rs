@@ -36,6 +36,8 @@ pub struct SendableState {
     pub xy: Option<[f32; 2]>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alert: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transitiontime: Option<u8>,
 }
 
 impl Default for SendableState {
@@ -49,6 +51,7 @@ impl Default for SendableState {
             effect: None,
             xy: None,
             alert: None,
+            transitiontime: Some(1),
         }
     }
 }

@@ -11,3 +11,9 @@ reqwest = {version = "0.10.1", features = ["blocking", "json"] }
 dirs = "*"
 dotenv = "*"
 ssdp = "*"
+clap = "*"
+
+
+[[bin]]
+name = "lh"
+path = "src/bin/lighthouse.rs"
