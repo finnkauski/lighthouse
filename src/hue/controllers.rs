@@ -11,7 +11,7 @@ pub struct HueBridge {
 
 impl HueBridge {
     /// Load configs from the environment
-    fn get_address() -> String {
+    fn authenticate(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         // load in a dotenv file
         let mut config = dirs::home_dir().unwrap();
         config.push(".lighthouse");
@@ -21,21 +21,17 @@ impl HueBridge {
         let ip = std::env::var("HUE_BRIDGE_IP").unwrap();
         let key = std::env::var("HUE_BRIDGE_KEY").unwrap();
 
-        format!("http://{}/api/{}/", ip, key)
+        self.address = format!("http://{}/api/{}/", ip, key);
+
+        Ok(())
     }
 
     /// Establish a connection (Constructor method)
     pub fn connect() -> Self {
-        // get address
-        let address = Self::get_address();
+        let mut bridge = Self::default();
 
-        // create the reqwest client
-        let client = Client::new();
-
-        let mut bridge = Self {
-            address,
-            client,
-            lights: LightCollection::default(),
+        if let Err(e) = bridge.authenticate() {
+            println!("Could not authenticate: {}", e);
         };
 
         if let Err(e) = bridge.scan() {
@@ -45,7 +41,7 @@ impl HueBridge {
         bridge
     }
 
-    /// Private function wrapping the request sending funtionality
+    /// Private function wrapping the request sending functionality
     pub fn request(
         &self,
         endpoint: &str,
@@ -120,6 +116,16 @@ impl HueBridge {
                 println!("Could not send the get request: {}", e);
             }
         };
+    }
+}
+
+impl Default for HueBridge {
+    fn default() -> Self {
+        Self {
+            address: "".into(),
+            client: Client::new(),
+            lights: LightCollection::default(),
+        }
     }
 }
 
