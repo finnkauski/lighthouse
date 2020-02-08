@@ -1,6 +1,7 @@
-use lighthouse::{controllers::Hub, state};
+use lighthouse::controllers::HueBridge;
 
 fn main() {
-    let h = Hub::connect();
-    h.state(3, state!(on: true));
+    let h = HueBridge::connect();
+    h.doctor();
 }
+// TODO: Add interactive mode where the user talks to it like PG

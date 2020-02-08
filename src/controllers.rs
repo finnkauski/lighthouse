@@ -2,14 +2,16 @@
 use crate::{lights::hue::*};
 use reqwest::blocking::{Client, Response};
 
-pub struct Hub {
+/// The Philips Hue light hub.
+///
+///
+pub struct HueBridge {
     address: String,
     client: Client,
+    lights: LightCollection,
 }
 
-trait LightController {}
-
-impl Hub {
+impl HueBridge {
     /// Load configs from the environment
     fn get_address() -> String {
         // load in a dotenv file
@@ -32,7 +34,17 @@ impl Hub {
         // create the reqwest client
         let client = Client::new();
 
-        Self { address, client }
+        let mut bridge = Self {
+            address,
+            client,
+            lights: LightCollection::default(),
+        };
+
+        if let Err(e) = bridge.scan() {
+            println!("Could not collect information about the system: {}", e);
+        };
+
+        bridge
     }
 
     /// Private function wrapping the request sending funtionality
@@ -59,6 +71,38 @@ impl Hub {
             Some(state),
         )?;
         Ok(())
+    }
+
+    /// Collects the lights that exist on the network and
+    /// updates the struct with their:
+    /// - ids
+    /// - number of lights
+    ///
+    fn scan(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        // collect the state of the system
+        let lights: std::collections::BTreeMap<u8, Light> =
+            self.request("lights", RequestType::Get, None)?.json()?;
+        let ids: Vec<u8> = lights.keys().cloned().collect();
+        let count = ids.len() as u8;
+
+        self.lights = LightCollection { lights, ids, count };
+
+        Ok(())
+    }
+
+    /// Print outs diagnostic information for debuging purposes
+    /// Currently printed:
+    /// - response from the `lights` endpoint
+    pub fn doctor(&self) {
+        match self.request("lights", RequestType::Get, None) {
+            Ok(resp) => {
+                let r: serde_json::Value = resp.json().unwrap();
+                println!("{}", serde_json::to_string_pretty(&r).unwrap());
+            }
+            Err(e) => {
+                println!("Could not send the get request: {}", e);
+            }
+        };
     }
 }
 
