@@ -1,5 +1,6 @@
 use crate::hue::*;
 use reqwest::blocking::{Client, Response};
+use serde_json::Value;
 
 // TODO: Implement the send macro that
 /// The Philips Hue light bridge.
@@ -10,18 +11,130 @@ pub struct HueBridge {
 }
 
 impl HueBridge {
-    /// Load configs from the environment
+    /// Discovers bridge IPs on the networks using SSDP
+    pub fn find_bridges() -> Vec<String> {
+        println!("Searching for bridges...");
+        use ssdp::header::{HeaderMut, Man, MX, ST};
+        use ssdp::message::{Multicast, SearchRequest};
+
+        // Create Our Search Request
+        let mut request = SearchRequest::new();
+
+        // Set Our Desired Headers (Not Verified By The Library)
+        request.set(Man);
+        request.set(MX(5));
+        request.set(ST::Target(ssdp::FieldMap::URN(
+            "urn:schemas-upnp-org:device:Basic:1".into(),
+        )));
+
+        let mut bridges = Vec::new();
+        // Iterate Over Streaming Responses
+        for (_, src) in request.multicast().unwrap() {
+            let ip = src.ip().to_string();
+            if !bridges.contains(&ip) {
+                bridges.push(ip)
+            }
+        }
+        bridges
+    }
+
+    /// Waits for the user to press the button on the loop
+    fn wait_for_button(ips: Vec<String>, client: &Client) -> (String, String) {
+        let body = serde_json::json!({ "devicetype": "commandline::lighthouse" });
+        let check = |i: &String| -> Value {
+            client
+                .post(&format!("http://{}/api", i))
+                .json(&body)
+                .send()
+                .unwrap()
+                .json()
+                .unwrap()
+        };
+
+        let mut response: Value = Value::Null;
+        let mut bridge_ip = String::new();
+        loop {
+            println!("Click the button on desired bridge.");
+            std::thread::sleep(std::time::Duration::from_secs(3));
+            for ip in &ips {
+                response = check(&ip);
+                if response[0]["error"]["type"] == 101 {
+                    continue;
+                } else {
+                    bridge_ip.push_str(ip);
+                    break;
+                }
+            }
+            if response[0]["error"]["type"] != 101 {
+                break;
+            }
+        }
+
+        (bridge_ip, response[0]["success"]["username"].to_string())
+    }
+
+    fn register(&mut self, configpath: &str) -> Result<(), Box<dyn std::error::Error>> {
+        use std::io::{prelude::*, stdin};
+
+        println!("Starting hue bridge registration procedure...");
+        let bridges = Self::find_bridges(); // find any bridges present on network
+        let mut ip = String::new(); // TODO: replace with proper IP struct
+
+        let (ip, key) = if bridges.len() == 0 {
+            println!("Unfortunately, no bridges were found on the network.\nPlease supply an IP for a Hue bridge manually");
+            stdin().read_line(&mut ip)?;
+            ip = ip.trim().to_string();
+            Self::wait_for_button(vec![ip], &self.client)
+        } else {
+            println!(
+                "Bridge(s) found: {:?}\nWill try to connect to all of them sequentially...",
+                &bridges
+            );
+            Self::wait_for_button(bridges, &self.client)
+        };
+
+        let mut file = std::fs::File::create(configpath)?;
+        file.write_all(format!("HUE_BRIDGE_IP=\"{}\"\nHUE_BRIDGE_KEY={}", &ip, key).as_ref())?;
+        println!("Config file successfully saved! (location: {})", configpath);
+
+        if let Err(e) = dotenv::from_path(configpath) {
+            println!("Could not register: {}\nWill retry..", e);
+            self.register(configpath).unwrap();
+        };
+
+        self.address = format!("http://{}/api/{}/", ip, key.to_string().replace("\"", ""));
+        Ok(())
+    }
+
+    /// This function orchestrates the authentication flow.
+    /// It boils down to checking if the HUE Environment variables are
+    /// loaded and if not kicking off the registration function.
     fn authenticate(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         // load in a dotenv file
         let mut config = dirs::home_dir().unwrap();
         config.push(".lighthouse");
-        dotenv::from_path(config);
+
+        // load in the config file
+        if let Err(e) = dotenv::from_path(&config) {
+            println!("NOTE: Could not load form config: {}", e);
+            println!("Will try loading from environment variables anyway");
+        };
 
         // get address from environment
-        let ip = std::env::var("HUE_BRIDGE_IP").unwrap();
-        let key = std::env::var("HUE_BRIDGE_KEY").unwrap();
+        let ip = std::env::var("HUE_BRIDGE_IP");
+        let key = std::env::var("HUE_BRIDGE_KEY");
 
-        self.address = format!("http://{}/api/{}/", ip, key);
+        match (ip, key) {
+            (Ok(ip), Ok(key)) => {
+                self.address = format!("http://{}/api/{}/", ip, key);
+            }
+            (_, _) => {
+                println!("Was not able to load from config or environment");
+                if let Err(e) = self.register(config.to_str().unwrap()) {
+                    panic!("Registration failed: {}", e);
+                };
+            }
+        }
 
         Ok(())
     }

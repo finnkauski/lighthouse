@@ -1,10 +1,8 @@
 [package]
 name = "lighthouse"
 version = "0.1.0"
-authors = ["art"]
+authors = ["Art Eidukas"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 serde = {version = "*", features = ["derive"]}
@@ -12,3 +10,4 @@ serde_json = "*"
 reqwest = {version = "0.10.1", features = ["blocking", "json"] }
 dirs = "*"
 dotenv = "*"
+ssdp = "*"
