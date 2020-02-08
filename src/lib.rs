@@ -1,2 +1,3 @@
-pub mod controllers;
-pub mod lights;
+pub mod hue;
+
+pub use hue::*;

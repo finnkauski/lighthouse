@@ -1,10 +1,8 @@
-#[macro_use]
-use crate::{lights::hue::*};
+use crate::hue::*;
 use reqwest::blocking::{Client, Response};
 
-/// The Philips Hue light hub.
-///
-///
+// TODO: Implement the send macro that
+/// The Philips Hue light bridge.
 pub struct HueBridge {
     address: String,
     client: Client,
@@ -52,7 +50,7 @@ impl HueBridge {
         &self,
         endpoint: &str,
         how: RequestType,
-        params: Option<SendableState>,
+        params: Option<&SendableState>,
     ) -> Result<Response, Box<dyn std::error::Error>> {
         let target = format!("{}{}", self.address, endpoint);
         let response = match how {
@@ -64,12 +62,31 @@ impl HueBridge {
     }
 
     /// Send state to the light endpoint
-    pub fn state(&self, light: u8, state: SendableState) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn state_by_id(
+        &self,
+        light: u8,
+        state: &SendableState,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.request(
             &format!("lights/{}/state", light),
             RequestType::Put,
             Some(state),
         )?;
+        Ok(())
+    }
+
+    // TODO: ADD send by name
+
+    /// Send state to all lights that can be found on the
+    /// bridge
+    pub fn all(&self, state: &SendableState) -> Result<(), Box<dyn std::error::Error>> {
+        for id in &self.lights.ids {
+            self.request(
+                &format!("lights/{}/state", id),
+                RequestType::Put,
+                Some(state),
+            )?;
+        }
         Ok(())
     }
 
