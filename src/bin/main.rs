@@ -1,9 +1,6 @@
-use lighthouse::controllers::{Hub, RequestType};
+use lighthouse::{controllers::Hub, state};
 
 fn main() {
     let h = Hub::connect();
-    dbg!(h
-        .request("lights", RequestType::Get, Some(serde_json::Value::Null))
-        .unwrap()
-        .text());
+    h.state(3, state!(on: true));
 }
