@@ -10,6 +10,8 @@ written in a way that allows other smart lights to be added in the future.
 That said, the bulk of the codebase and the CLI focuses on Philips Hue as I 
 don't have any other branded smart light or other smart home tech to integrate.
 
+
+<br>
 ## Installation
 
 As it is under development you will need the `Rust` and `cargo` installed.
