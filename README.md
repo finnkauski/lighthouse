@@ -1,4 +1,4 @@
-<p align="left"><img align="left" src="meta/logo.png" width="350px"></p>
+<p align="left"><img align="left" src="meta/logo.png" width="400px"></p>
 
 # Lighthouse
 
@@ -12,7 +12,7 @@ don't have any other branded smart light or other smart home tech to integrate.
 
 </hr>
 
-# Installation
+## Installation
 
 As it is under development you will need the `Rust` and `cargo` installed.
 Easiest way to do so is to get on board with [rustup](https://rustup.rs).
