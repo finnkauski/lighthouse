@@ -16,9 +16,11 @@ pub struct LightCollection {
 /// `State`.
 ///
 /// ```
-/// let state_1: SendableState = serde_json::from_str(r#"{"on":true}"#);
-/// let state_2: SendableState = SendableState {on:true, ..SendableState::default()};
-/// let state_3: SendableState = state!(on: true, xy: [1.0, 0.123])
+/// use lighthouse::*;
+/// let state_1: SendableState = serde_json::from_str(r#"{"on":true}"#).unwrap();
+/// let state_2: SendableState = SendableState {on:Some(true), ..SendableState::default()};
+/// let state_3: SendableState = state!(nonref, on: true, xy: [1.0, 0.123]);
+/// let state_4: &SendableState = state!(on: true, xy: [1.0, 0.123]);
 /// ```
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SendableState {
@@ -58,12 +60,13 @@ impl Default for SendableState {
 
 /// Super useful macro to create `SendableState`
 /// ```
+/// use lighthouse::*;
 /// // Usage examples
 /// // Returns a reference, most useful as a default
-/// let sendable_state: &SendableState = state!(on: true, xy: [1.0, 0.0])
+/// let sendable_state: &SendableState = state!(on: true, xy: [1.0, 0.0]);
 ///
 /// // Returns a value, still useful.
-/// let sendable_state: SendableState = state!(nonref, on: true, xy: [1.0, 0.0])
+/// let sendable_state: SendableState = state!(nonref, on: true, xy: [1.0, 0.0]);
 /// ```
 #[macro_export]
 macro_rules! state {
@@ -75,9 +78,9 @@ macro_rules! state {
     };
 
     (nonref, $($i:ident:$v:expr), *) => {
-        lighthouse::lights::hue::SendableState {
+        lighthouse::hue::lights::SendableState {
             $($i: Some($v),) *
-            ..lighthouse::lights::hue::SendableState::default()
+            ..lighthouse::hue::lights::SendableState::default()
         }
     };
 

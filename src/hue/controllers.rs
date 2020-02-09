@@ -17,10 +17,8 @@ impl HueBridge {
         use ssdp::header::{HeaderMut, Man, MX, ST};
         use ssdp::message::{Multicast, SearchRequest};
 
-        // Create Our Search Request
+        // create request with required headers for the sddp search
         let mut request = SearchRequest::new();
-
-        // Set Our Desired Headers (Not Verified By The Library)
         request.set(Man);
         request.set(MX(5));
         request.set(ST::Target(ssdp::FieldMap::URN(
@@ -28,7 +26,6 @@ impl HueBridge {
         )));
 
         let mut bridges = Vec::new();
-        // Iterate Over Streaming Responses
         for (_, src) in request.multicast().unwrap() {
             let ip = src.ip().to_string();
             if !bridges.contains(&ip) {
@@ -73,14 +70,14 @@ impl HueBridge {
         (bridge_ip, response[0]["success"]["username"].to_string())
     }
 
-    fn register(&mut self, configpath: &str) -> Result<(), Box<dyn std::error::Error>> {
+    fn authenticate(&mut self, configpath: &str) -> Result<(), Box<dyn std::error::Error>> {
         use std::io::{prelude::*, stdin};
 
         println!("Starting hue bridge registration procedure...");
         let bridges = Self::find_bridges(); // find any bridges present on network
         let mut ip = String::new(); // TODO: replace with proper IP struct
 
-        let (ip, key) = if bridges.len() == 0 {
+        let (ip, key) = if bridges.is_empty() {
             println!("Unfortunately, no bridges were found on the network.\nPlease supply an IP for a Hue bridge manually");
             stdin().read_line(&mut ip)?;
             ip = ip.trim().to_string();
@@ -98,18 +95,20 @@ impl HueBridge {
         println!("Config file successfully saved! (location: {})", configpath);
 
         if let Err(e) = dotenv::from_path(configpath) {
-            println!("Could not register: {}\nWill retry..", e);
-            self.register(configpath).unwrap();
+            println!(
+                "Could not verify registration config file is valid: {} (check: {})",
+                e, configpath
+            );
         };
 
-        self.address = format!("http://{}/api/{}/", ip, key.to_string().replace("\"", ""));
+        self.address = format!("http://{}/api/{}/", ip, key.replace("\"", ""));
         Ok(())
     }
 
     /// This function orchestrates the authentication flow.
     /// It boils down to checking if the HUE Environment variables are
     /// loaded and if not kicking off the registration function.
-    fn authenticate(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    fn setup(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         // load in a dotenv file
         let mut config = dirs::home_dir().unwrap();
         config.push(".lighthouse");
@@ -130,7 +129,7 @@ impl HueBridge {
             }
             (_, _) => {
                 println!("Was not able to load from config or environment");
-                if let Err(e) = self.register(config.to_str().unwrap()) {
+                if let Err(e) = self.authenticate(config.to_str().unwrap()) {
                     panic!("Registration failed: {}", e);
                 };
             }
@@ -143,8 +142,8 @@ impl HueBridge {
     pub fn connect() -> Self {
         let mut bridge = Self::default();
 
-        if let Err(e) = bridge.authenticate() {
-            println!("Could not authenticate: {}", e);
+        if let Err(e) = bridge.setup() {
+            println!("Could not complete setup: {}", e);
         };
 
         if let Err(e) = bridge.scan() {

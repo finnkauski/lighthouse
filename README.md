@@ -58,6 +58,8 @@ contribute:
 
 - More CLI commands
 - Examples for the repository
+- I am aware that you get compilation warnings due to unused `Result` returns.
+  Good one to start with.
 - Currently the `reqwest` client is not `async`, would be ideal if we could send
   the lights commands asynchronously rather than in a for loop.
 - Remove loose unwraps
