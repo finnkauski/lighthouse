@@ -1,3 +1,4 @@
+<div>
 <p align="center"><img align="left" src="meta/logo.png" width="350px"></p>
 
 # Lighthouse
@@ -7,7 +8,7 @@ Smart lights control tool and `Rust` crate.
 Currently it mainly supports Philips Hue lights. But the back-end crate is
 written in a way that allows other smart lights to be added in the future.
 
-<hr>
+</div>
 
 ## Installation
 
