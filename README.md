@@ -42,6 +42,12 @@ lh state
 
 # send state from a json file, ignores text string passed
 lh state -f filename
+
+# discovers any bridges on the network
+lh discover
+
+# print system info once registered
+lh info
 ```
 
 ## Short-term trajectory (timeline)
