@@ -1,15 +1,16 @@
-<p align="center"><img align="center" src="meta/logo.png" width="350px"></p>
-
-![Rust](https://github.com/finnkauski/lighthouse/workflows/Rust/badge.svg)
+<p align="left"><img align="left" src="meta/logo.png" width="240px"></p>
 
 # Lighthouse
 
 Smart lights control tool and `Rust` crate.
 
 Currently it mainly supports Philips Hue lights. But the back-end crate is
-written in a way that allows other smart lights to be added in the future. That
-said, the bulk of the codebase and the CLI focuses on Philips Hue as I don't
-have any other branded smart light or other smart home tech to integrate.
+written in a way that allows other smart lights to be added in the future.
+
+That said, the bulk of the codebase and the CLI focuses on Philips Hue as I 
+don't have any other branded smart light or other smart home tech to integrate.
+
+
 
 ## Installation
 
