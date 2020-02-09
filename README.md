@@ -1,4 +1,4 @@
-<p align="left"><img align="left" src="meta/logo.png" width="200px"></p>
+<p align="left"><img align="left" src="meta/logo.png" width="220px"></p>
 
 # Lighthouse
 
