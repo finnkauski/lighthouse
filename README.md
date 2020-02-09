@@ -1,7 +1,5 @@
 <p align="center"><img align="center" src="meta/logo.png" width="350px"></p>
 
-![Rust](https://github.com/finnkauski/lighthouse/workflows/Rust/badge.svg)
-
 # Lighthouse
 
 Smart lights control tool and `Rust` crate.
