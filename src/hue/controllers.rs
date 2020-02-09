@@ -13,14 +13,14 @@ pub struct HueBridge {
 impl HueBridge {
     /// Discovers bridge IPs on the networks using SSDP
     pub fn find_bridges() -> Vec<String> {
-        println!("Searching for bridges...");
+        println!("Searching for bridges (10s)...");
         use ssdp::header::{HeaderMut, Man, MX, ST};
         use ssdp::message::{Multicast, SearchRequest};
 
         // create request with required headers for the sddp search
         let mut request = SearchRequest::new();
         request.set(Man);
-        request.set(MX(5));
+        request.set(MX(10));
         request.set(ST::Target(ssdp::FieldMap::URN(
             "urn:schemas-upnp-org:device:Basic:1".into(),
         )));
