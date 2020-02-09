@@ -1,3 +1,4 @@
+<p align="center"><img align="left" src="meta/logo.png" width="350px"></p>
 # Lighthouse
 
 Smart lights control tool and `Rust` crate.
