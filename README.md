@@ -14,7 +14,7 @@ have any other branded smart light or other smart home tech to integrate.
 As it is under development you will need the `Rust` and `cargo` installed.
 Easiest way to do so is to get on board with [rustup](https://rustup.rs).
 
-Once you have the dependencies installed run:
+Once you have the dependencies installed, run the following:
 
 ```shell
 cargo install --git https://github.com/finnkauski/lighthouse
