@@ -8,25 +8,34 @@ fn main() {
                             (author: "Art Eidukas <iwiivi@gmail.com>")
                             (about: "lighthouse - light automation from the comfort of your keyboard")
                             (@subcommand on =>
-                             (about: "turn all hue lights on")
+                             (about: "Turn all hue lights on")
                             )
                             (@subcommand off =>
-                             (about: "turn all hue lights off")
+                             (about: "Turn all hue lights off")
                             )
                             (@subcommand state =>
-                             (about: "send state string to all hue lights")
-                             (@arg state: +required)
+                             (about: "Send state string to all hue lights")
+                             (@arg filename: -f --file +takes_value "Filename if providing state from file. If provided ignores text string")
+                             (@arg state: "Textual state to be sent")
                             )
-
     )
-        .get_matches();
+    .get_matches();
 
-    if let Some(_) = matches.subcommand_matches("on") {
+    if matches.subcommand_matches("on").is_some() {
         h.all(state!(on: true, bri: 254));
-    } else if let Some(_) = matches.subcommand_matches("off") {
+    } else if matches.subcommand_matches("off").is_some() {
         h.all(state!(on: false));
     } else if let Some(sub) = matches.subcommand_matches("state") {
-        if let Some(state) = sub.value_of("state") {
+        if let Some(filename) = sub.value_of("filename") {
+            if let Ok(file) = std::fs::File::open(filename) {
+                match serde_json::from_reader(std::io::BufReader::new(file)) {
+                    Ok(state) => {
+                        h.all(&state);
+                    }
+                    Err(e) => println!("Could not parse state: {}", e),
+                }
+            }
+        } else if let Some(state) = sub.value_of("state") {
             match serde_json::from_str::<SendableState>(state) {
                 Ok(s) => {
                     h.all(&s);
