@@ -68,6 +68,8 @@ The tool is good enough for me to be able to do most stuff I want to do. It does
 have the potential to become much more user friendly. I would love people to
 contribute:
 
+- If you have odd setups or things like light groups, even trying it out to see
+  if it breaks would be helpful
 - More CLI commands
 - Examples for the repository
 - I am aware that you get compilation warnings due to unused `Result` returns.
