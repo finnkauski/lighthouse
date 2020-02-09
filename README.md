@@ -1,4 +1,4 @@
-<p align="left"><img align="left" src="meta/logo.png" width="300px"></p>
+<p align="left"><img align="left" src="meta/logo.png" width="280px"></p>
 
 # Lighthouse
 
@@ -10,7 +10,7 @@ written in a way that allows other smart lights to be added in the future.
 That said, the bulk of the codebase and the CLI focuses on Philips Hue as I 
 don't have any other branded smart light or other smart home tech to integrate.
 
-</hr>
+
 
 ## Installation
 
