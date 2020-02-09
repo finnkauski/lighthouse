@@ -32,11 +32,17 @@ cargo install --path .
 
 ## Usage
 
+#### Example files
+
+If you would like to see some of the uses for the `crate` site of `lighthouse`,
+see the `examples` directory of the repository. They will give you an idea of
+how to use the internals of the crate.
+
+#### Example commands
+
 After installing you will have to authenticate to a `Philips Hue` bridge (the
 box that controls the lights). All commands with the exception of `discover`
 will run you through a Hue authentication flow.
-
-#### Example commands
 
 ```shell
 # turns all lights on

@@ -5,9 +5,9 @@ use serde_json::Value;
 // TODO: Implement the send macro that
 /// The Philips Hue light bridge.
 pub struct HueBridge {
-    address: String,
-    client: Client,
-    lights: LightCollection,
+    pub address: String,
+    pub client: Client,
+    pub lights: LightCollection,
 }
 
 impl HueBridge {
