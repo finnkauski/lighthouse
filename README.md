@@ -32,7 +32,7 @@ cargo install --path .
 
 After installing you will have to authenticate to a `Philips Hue` bridge (the
 box that controls the lights). All commands with the exception of `discover`
-will run you through a HUE authentication flow.
+will run you through a Hue authentication flow.
 
 #### Example commands
 
