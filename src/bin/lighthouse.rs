@@ -52,6 +52,8 @@ fn main() {
             }
         } else if matches.subcommand_matches("info").is_some() {
             h.system_info();
+        } else {
+            println!("No command passed. type: `lh --help`")
         }
     } else {
         println!(

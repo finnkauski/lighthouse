@@ -5,7 +5,9 @@
 Smart lights control tool and `Rust` crate.
 
 Currently it mainly supports Philips Hue lights. But the back-end crate is
-written in a way that allows other smart lights to be added in the future.
+written in a way that allows other smart lights to be added in the future. That
+said, the bulk of the codebase and the CLI focuses on Philips Hue as I don't
+have any other branded smart light or other smart home tech to integrate.
 
 ## Installation
 
@@ -28,7 +30,11 @@ cargo install --path .
 
 ## Usage
 
-After installing you can use the tool as follows:
+After installing you will have to authenticate to a `Philips Hue` bridge (the
+box that controls the lights). All commands with the exception of `discover`
+will run you through a HUE authentication flow.
+
+#### Example commands
 
 ```shell
 # turns all lights on
