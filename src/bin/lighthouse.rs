@@ -17,13 +17,16 @@ fn main() {
                              (@arg filename: -f --file +takes_value "Filename if providing state from file. If provided ignores text string")
                              (@arg state: "Textual state to be sent")
                             )
-                            (@subcommand doctor =>
-                             (about: "Produces useful information for development purposes")
+                            (@subcommand info =>
+                             (about: "Print out useful information about your system")
+                            )
+                            (@subcommand discover =>
+                             (about: "Discover bridges on the network and print them")
                             )
     )
     .get_matches();
 
-    if matches.subcommand_matches("doctor").is_none() {
+    if matches.subcommand_matches("discover").is_none() {
         let h = HueBridge::connect();
         if matches.subcommand_matches("on").is_some() {
             h.all(state!(on: true, bri: 254));
@@ -47,7 +50,9 @@ fn main() {
                     Err(e) => println!("Unable to parse text state: {}", e),
                 }
             }
-        };
+        } else if matches.subcommand_matches("info").is_some() {
+            h.system_info();
+        }
     } else {
         println!(
             "Found the following bridges: {:?}",

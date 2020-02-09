@@ -215,10 +215,8 @@ impl HueBridge {
         Ok(())
     }
 
-    /// Print outs diagnostic information for debuging purposes
-    /// Currently printed:
-    /// - response from the `lights` endpoint
-    pub fn doctor(&self) {
+    /// Print useful information about the state of your system
+    pub fn system_info(&self) {
         match self.request("lights", RequestType::Get, None) {
             Ok(resp) => {
                 let r: serde_json::Value = resp.json().unwrap();
