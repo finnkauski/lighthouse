@@ -7,6 +7,8 @@ Smart lights control tool and `Rust` crate.
 Currently it mainly supports Philips Hue lights. But the back-end crate is
 written in a way that allows other smart lights to be added in the future.
 
+<hr>
+
 ## Installation
 
 As it is under development you will need the `Rust` and `cargo` installed.
