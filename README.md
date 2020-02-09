@@ -7,19 +7,6 @@ Smart lights control tool and `Rust` crate.
 Currently it mainly supports Philips Hue lights. But the back-end crate is
 written in a way that allows other smart lights to be added in the future.
 
-## Contributing
-
-The tool is good enough for me to be able to do most stuff I want to do. It does
-have the potential to become much more user friendly. I would love people to
-contribute:
-
-- More CLI commands
-- Examples for the repository
-- Currently the `reqwest` client is not `async`, would be ideal if we could send
-  the lights commands asynchronously rather than in a for loop.
-- Remove loose unwraps
-- Tests
-
 ## Installation
 
 As it is under development you will need the `Rust` and `cargo` installed.
@@ -57,8 +44,21 @@ lh state
 lh state -f filename
 ```
 
-## Short-term trajectory
+## Short-term trajectory (timeline)
 
 - Get the CLI to be a bit more comprehensive
 - Add sending commands to lights by ID or Name
 - Add color sending support
+
+## Contributing
+
+The tool is good enough for me to be able to do most stuff I want to do. It does
+have the potential to become much more user friendly. I would love people to
+contribute:
+
+- More CLI commands
+- Examples for the repository
+- Currently the `reqwest` client is not `async`, would be ideal if we could send
+  the lights commands asynchronously rather than in a for loop.
+- Remove loose unwraps
+- Tests
