@@ -35,7 +35,7 @@ cargo install --path .
 
 #### Example files
 
-If you would like to see some of the uses for the `crate` site of `lighthouse`,
+If you would like to see some of the uses for the `crate` side of `lighthouse`,
 see the `examples` directory of the repository. They will give you an idea of
 how to use the internals of the crate.
 
