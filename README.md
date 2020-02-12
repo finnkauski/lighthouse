@@ -50,23 +50,23 @@ box that controls the lights). All commands with the exception of `discover`
 will run you through a Hue authentication flow.
 
 ```shell
-# turns all lights on
-lh on
+lighthouse - light automation from the comfort of your keyboard
 
-# turns all lights off
-lh off
+USAGE:
+    lh [SUBCOMMAND]
 
-# send a state from text string
-lh state
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
 
-# send state from a json file, ignores text string passed
-lh state -f filename
-
-# discovers any bridges on the network
-lh discover
-
-# print system info once registered
-lh info
+SUBCOMMANDS:
+    bri         Set brightness (turns on if off)
+    discover    Discover bridges on the network and print them
+    help        Prints this message or the help of the given subcommand(s)
+    info        Print out useful information about your system
+    off         Turn all hue lights off
+    on          Turn all hue lights on
+    state       Send state string to all hue lights
 ```
 
 ## Short-term trajectory (timeline)

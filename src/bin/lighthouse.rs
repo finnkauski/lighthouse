@@ -1,6 +1,8 @@
 use clap::*;
 use lighthouse::{state, HueBridge, SendableState};
 
+// TODO: if a light is provided by id then all the logic starts doing it on one light
+// TODO: instead of printing out exit with error code
 fn main() {
     let matches = clap_app!(lighthouse =>
                             (version: "0.0.1")
@@ -11,6 +13,10 @@ fn main() {
                             )
                             (@subcommand off =>
                              (about: "Turn all hue lights off")
+                            )
+                            (@subcommand bri =>
+                             (about: "Set brightness (turns on if off)")
+                             (@arg bri: "Brightness value (0 - 254)")
                             )
                             (@subcommand state =>
                              (about: "Send state string to all hue lights")
@@ -32,6 +38,17 @@ fn main() {
             h.all(state!(on: true, bri: 254));
         } else if matches.subcommand_matches("off").is_some() {
             h.all(state!(on: false));
+        } else if let Some(sub) = matches.subcommand_matches("bri") {
+            if let Some(bri) = sub.value_of("bri") {
+                match bri.parse::<u8>() {
+                    Ok(val) => {
+                        h.all(state!(on: true, bri: val));
+                    }
+                    Err(e) => println!("Could not parse brightness value: {}", e),
+                }
+            } else {
+                println!("No brightness value provided")
+            }
         } else if let Some(sub) = matches.subcommand_matches("state") {
             if let Some(filename) = sub.value_of("filename") {
                 if let Ok(file) = std::fs::File::open(filename) {
