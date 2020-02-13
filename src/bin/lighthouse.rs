@@ -38,6 +38,8 @@ fn main() {
     )
     .get_matches();
 
+    // NOTE: maybe refactor into one big match
+    // match matches.value... { (Some(subs), Some(...)) => ....
     if matches.subcommand_matches("discover").is_none() {
         let h = HueBridge::connect();
         if matches.subcommand_matches("on").is_some() {
@@ -65,7 +67,7 @@ fn main() {
                     match (red.parse::<u8>(), green.parse::<u8>(), blue.parse::<u8>()) {
                         (Ok(red), Ok(green), Ok(blue)) => {
                             let xy = colors::rgb_to_xy(red, green, blue);
-                            h.all(state!(colormode: "xy".into(), xy: xy));
+                            h.all(state!(on: true, colormode: "xy".into(), xy: xy));
                         }
                         (_, _, _) => println!("Could not parse an rgb value"),
                     }
