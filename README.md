@@ -53,7 +53,7 @@ After installing you will have to authenticate to a `Philips Hue` bridge (the
 box that controls the lights). All commands with the exception of `discover`
 will run you through a Hue authentication flow.
 
-```shell
+```
 lighthouse - light automation from the comfort of your keyboard
 
 USAGE:
