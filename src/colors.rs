@@ -22,5 +22,6 @@ pub fn rgb_to_xy(r0: u8, g0: u8, b0: u8) -> [f32; 2] {
     let z = red * 0.000_088 + green * 0.072_310 + blue * 0.986_039;
     let denominator = x + y + z;
 
+    // TODO: if the z is truly the brightness we need to return it
     [x / denominator, y / denominator]
 }
