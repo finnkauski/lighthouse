@@ -1,5 +1,5 @@
 use clap::*;
-use lighthouse::{state, HueBridge, SendableState};
+use lighthouse::{colors, state, HueBridge, SendableState};
 
 // TODO: if a light is provided by id then all the logic starts doing it on one light
 // TODO: instead of printing out exit with error code
@@ -29,6 +29,12 @@ fn main() {
                             (@subcommand discover =>
                              (about: "Discover bridges on the network and print them")
                             )
+                            (@subcommand color =>
+                             (about: "Color commands (WIP) the current API is unstable")
+                             (@arg red: "rgb value of red")
+                             (@arg green: "rgb value of green")
+                             (@arg blue: "rgb value of blue")
+                            )
     )
     .get_matches();
 
@@ -48,6 +54,23 @@ fn main() {
                 }
             } else {
                 println!("No brightness value provided")
+            }
+        } else if let Some(sub) = matches.subcommand_matches("color") {
+            match (
+                sub.value_of("red"),
+                sub.value_of("green"),
+                sub.value_of("blue"),
+            ) {
+                (Some(red), Some(green), Some(blue)) => {
+                    match (red.parse::<u8>(), green.parse::<u8>(), blue.parse::<u8>()) {
+                        (Ok(red), Ok(green), Ok(blue)) => {
+                            let xy = colors::rgb_to_xy(red, green, blue);
+                            h.all(state!(colormode: "xy".into(), xy: xy));
+                        }
+                        (_, _, _) => println!("Could not parse an rgb value"),
+                    }
+                }
+                (_, _, _) => println!("Missing one rgb value"),
             }
         } else if let Some(sub) = matches.subcommand_matches("state") {
             if let Some(filename) = sub.value_of("filename") {

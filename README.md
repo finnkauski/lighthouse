@@ -12,7 +12,7 @@ don't have any other branded smart light or other smart home tech to integrate.
 
 ## Also see:
 [lighthouse.el](https://github.com/finnkauski/lighthouse.el) - an Emacs package
-wrapping the functionality of `lighthouse`.
+wrapping the functionality of `lighthouse`. 
 
 ## Installation
 
