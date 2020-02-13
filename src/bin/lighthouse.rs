@@ -29,6 +29,9 @@ fn main() {
                             (@subcommand discover =>
                              (about: "Discover bridges on the network and print them")
                             )
+                            (@subcommand loop =>
+                             (about: "Set all lights to colorloop")
+                            )
                             (@subcommand color =>
                              (about: "Color commands (WIP) the current API is unstable")
                              (@arg red: "rgb value of red")
@@ -46,6 +49,8 @@ fn main() {
             h.all(state!(on: true, bri: 254));
         } else if matches.subcommand_matches("off").is_some() {
             h.all(state!(on: false));
+        } else if matches.subcommand_matches("loop").is_some() {
+            h.all(state!(on: true, effect: "colorloop".into()));
         } else if let Some(sub) = matches.subcommand_matches("bri") {
             if let Some(bri) = sub.value_of("bri") {
                 match bri.parse::<u8>() {

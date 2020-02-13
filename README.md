@@ -69,9 +69,10 @@ SUBCOMMANDS:
     discover    Discover bridges on the network and print them
     help        Prints this message or the help of the given subcommand(s)
     info        Print out useful information about your system
+    loop        Set all lights to colorloop
     off         Turn all hue lights off
     on          Turn all hue lights on
-    state       Send state string to all hue lights```
+    state       Send state string to all hue lights
 
 ```
 
