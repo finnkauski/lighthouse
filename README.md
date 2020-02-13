@@ -65,12 +65,14 @@ FLAGS:
 
 SUBCOMMANDS:
     bri         Set brightness (turns on if off)
+    color       Color commands (WIP) the current API is unstable
     discover    Discover bridges on the network and print them
     help        Prints this message or the help of the given subcommand(s)
     info        Print out useful information about your system
     off         Turn all hue lights off
     on          Turn all hue lights on
-    state       Send state string to all hue lights
+    state       Send state string to all hue lights```
+
 ```
 
 ## Short-term trajectory (timeline)
