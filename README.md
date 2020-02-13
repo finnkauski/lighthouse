@@ -10,6 +10,10 @@ written in a way that allows other smart lights to be added in the future.
 That said, the bulk of the codebase and the CLI focuses on Philips Hue as I
 don't have any other branded smart light or other smart home tech to integrate.
 
+## Also see:
+[lighthouse.el](https://github.com/finnkauski/lighthouse.el) - an Emacs package
+wrapping the functionality of `lighthouse`.
+
 ## Installation
 
 As it is under development you will need the `Rust` and `cargo` installed.
