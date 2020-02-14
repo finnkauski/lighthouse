@@ -46,16 +46,20 @@ fn main() {
     if matches.subcommand_matches("discover").is_none() {
         let h = HueBridge::connect();
         if matches.subcommand_matches("on").is_some() {
-            h.all(state!(on: true, bri: 254));
+            h.all(state!(on: true, bri: 254))
+                .expect("Error raised while turning all lights on");
         } else if matches.subcommand_matches("off").is_some() {
-            h.all(state!(on: false));
+            h.all(state!(on: false))
+                .expect("Error raised while turning all lights off");
         } else if matches.subcommand_matches("loop").is_some() {
-            h.all(state!(on: true, effect: "colorloop".into()));
+            h.all(state!(on: true, effect: "colorloop".into()))
+                .expect("Error raised while setting all lights to colorloop");
         } else if let Some(sub) = matches.subcommand_matches("bri") {
             if let Some(bri) = sub.value_of("bri") {
                 match bri.parse::<u8>() {
                     Ok(val) => {
-                        h.all(state!(on: true, bri: val));
+                        h.all(state!(on: true, bri: val))
+                            .expect("Error raised while adjusting brightness of all lights");
                     }
                     Err(e) => println!("Could not parse brightness value: {}", e),
                 }
@@ -72,7 +76,8 @@ fn main() {
                     match (red.parse::<u8>(), green.parse::<u8>(), blue.parse::<u8>()) {
                         (Ok(red), Ok(green), Ok(blue)) => {
                             let xy = colors::rgb_to_xy(red, green, blue);
-                            h.all(state!(on: true, colormode: "xy".into(), xy: xy));
+                            h.all(state!(on: true, colormode: "xy".into(), xy: xy))
+                                .expect("Error raised while setting color of all lights");
                         }
                         (_, _, _) => println!("Could not parse an rgb value"),
                     }
@@ -84,7 +89,8 @@ fn main() {
                 if let Ok(file) = std::fs::File::open(filename) {
                     match serde_json::from_reader(std::io::BufReader::new(file)) {
                         Ok(state) => {
-                            h.all(&state);
+                            h.all(&state)
+                                .expect("Error raised while changing state of all lights");
                         }
                         Err(e) => println!("Could not parse state: {}", e),
                     }
@@ -92,7 +98,8 @@ fn main() {
             } else if let Some(state) = sub.value_of("state") {
                 match serde_json::from_str::<SendableState>(state) {
                     Ok(s) => {
-                        h.all(&s);
+                        h.all(&s)
+                            .expect("Error raised while changing state of all lights");
                     }
                     Err(e) => println!("Unable to parse text state: {}", e),
                 }
