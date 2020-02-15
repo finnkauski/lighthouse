@@ -78,9 +78,9 @@ SUBCOMMANDS:
 
 ## Short-term trajectory (timeline)
 
-- Get the CLI to be a bit more comprehensive
+- Add color sending support (work in progress)
+- Get the CLI to be a bit more comprehensive (work in progress)
 - Add sending commands to lights by ID or Name
-- Add color sending support
 
 ## Contributing
 
@@ -92,9 +92,6 @@ contribute:
   if it breaks would be helpful
 - More CLI commands
 - Examples for the repository
-- I am aware that you get compilation warnings due to unused `Result` returns.
-  Good one to start with.
 - Currently the `reqwest` client is not `async`, would be ideal if we could send
   the lights commands asynchronously rather than in a for loop.
-- Remove loose unwraps
 - Tests
