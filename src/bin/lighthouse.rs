@@ -41,72 +41,82 @@ fn main() {
     )
     .get_matches();
 
-    // NOTE: maybe refactor into one big match
-    // match matches.value... { (Some(subs), Some(...)) => ....
-    if matches.subcommand_matches("discover").is_none() {
-        let h = HueBridge::connect();
-        if matches.subcommand_matches("on").is_some() {
-            h.all(state!(on: true, bri: 254));
-        } else if matches.subcommand_matches("off").is_some() {
-            h.all(state!(on: false));
-        } else if matches.subcommand_matches("loop").is_some() {
-            h.all(state!(on: true, effect: "colorloop".into()));
-        } else if let Some(sub) = matches.subcommand_matches("bri") {
-            if let Some(bri) = sub.value_of("bri") {
-                match bri.parse::<u8>() {
-                    Ok(val) => {
-                        h.all(state!(on: true, bri: val));
-                    }
-                    Err(e) => println!("Could not parse brightness value: {}", e),
-                }
-            } else {
-                println!("No brightness value provided")
-            }
-        } else if let Some(sub) = matches.subcommand_matches("color") {
-            match (
-                sub.value_of("red"),
-                sub.value_of("green"),
-                sub.value_of("blue"),
-            ) {
-                (Some(red), Some(green), Some(blue)) => {
-                    match (red.parse::<u8>(), green.parse::<u8>(), blue.parse::<u8>()) {
-                        (Ok(red), Ok(green), Ok(blue)) => {
-                            let xy = colors::rgb_to_xy(red, green, blue);
-                            h.all(state!(on: true, colormode: "xy".into(), xy: xy));
-                        }
-                        (_, _, _) => println!("Could not parse an rgb value"),
-                    }
-                }
-                (_, _, _) => println!("Missing one rgb value"),
-            }
-        } else if let Some(sub) = matches.subcommand_matches("state") {
-            if let Some(filename) = sub.value_of("filename") {
-                if let Ok(file) = std::fs::File::open(filename) {
-                    match serde_json::from_reader(std::io::BufReader::new(file)) {
-                        Ok(state) => {
-                            h.all(&state);
-                        }
-                        Err(e) => println!("Could not parse state: {}", e),
-                    }
-                }
-            } else if let Some(state) = sub.value_of("state") {
-                match serde_json::from_str::<SendableState>(state) {
-                    Ok(s) => {
-                        h.all(&s);
-                    }
-                    Err(e) => println!("Unable to parse text state: {}", e),
-                }
-            }
-        } else if matches.subcommand_matches("info").is_some() {
-            h.system_info();
-        } else {
-            println!("No command passed. type: `lh --help`")
-        }
-    } else {
+    if matches.subcommand_matches("discover").is_some() {
         println!(
             "Found the following bridges: {:?}",
             HueBridge::find_bridges()
         );
-    };
+    } else {
+        let h = HueBridge::connect();
+
+        match matches.subcommand() {
+            ("on", Some(_sub)) => {
+                h.all(state!(on: true, bri: 254))
+                    .expect("Error raised while turning all lights on");
+            }
+            ("off", Some(_sub)) => {
+                h.all(state!(on: false))
+                    .expect("Error raised while turning all lights off");
+            }
+            ("loop", Some(_sub)) => {
+                h.all(state!(on: true, effect: "colorloop".into()))
+                    .expect("Error raised while setting all lights to colorloop");
+            }
+            ("bri", Some(sub)) => match sub.value_of("bri") {
+                Some(bri) => match bri.parse::<u8>() {
+                    Ok(val) => {
+                        h.all(state!(on: true, bri: val))
+                            .expect("Error raised while adjusting brightness of all lights");
+                    }
+                    Err(e) => println!("Could not parse brightness value: {}", e),
+                },
+                None => println!("Missing brightness value"),
+            },
+            ("color", Some(sub)) => {
+                match (
+                    sub.value_of("red"),
+                    sub.value_of("green"),
+                    sub.value_of("blue"),
+                ) {
+                    (Some(red), Some(green), Some(blue)) => {
+                        match (red.parse::<u8>(), green.parse::<u8>(), blue.parse::<u8>()) {
+                            (Ok(red), Ok(green), Ok(blue)) => {
+                                let xy = colors::rgb_to_xy(red, green, blue);
+                                h.all(state!(on: true, colormode: "xy".into(), xy: xy))
+                                    .expect("Error raised while setting color of all lights");
+                            }
+                            (_, _, _) => println!("Could not parse an rgb value"),
+                        }
+                    }
+                    (_, _, _) => println!("Missing one rgb value"),
+                }
+            }
+            ("state", Some(sub)) => {
+                if let Some(filename) = sub.value_of("filename") {
+                    if let Ok(file) = std::fs::File::open(filename) {
+                        match serde_json::from_reader(std::io::BufReader::new(file)) {
+                            Ok(state) => {
+                                h.all(&state)
+                                    .expect("Error raised while changing state of all lights");
+                            }
+                            Err(e) => println!("Could not parse state: {}", e),
+                        }
+                    }
+                } else if let Some(state) = sub.value_of("state") {
+                    match serde_json::from_str::<SendableState>(state) {
+                        Ok(s) => {
+                            h.all(&s)
+                                .expect("Error raised while changing state of all lights");
+                        }
+                        Err(e) => println!("Unable to parse text state: {}", e),
+                    }
+                }
+            }
+            ("info", Some(_sub)) => {
+                h.system_info();
+            }
+            _ => println!("No command passed. type: `lh --help`"),
+        }
+    }
 }
 // TODO: Add interactive mode where the user talks to it like PG
