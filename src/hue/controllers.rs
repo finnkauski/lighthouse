@@ -169,17 +169,19 @@ impl HueBridge {
         Ok(response)
     }
 
-    /// Send state to the light endpoint
-    pub fn state_by_id(
+    /// Send state to each light associated with the ids passed into the function
+    pub fn state_by_ids(
         &self,
-        light: u8,
+        ids: &[u8],
         state: &SendableState,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.request(
-            &format!("lights/{}/state", light),
-            RequestType::Put,
-            Some(state),
-        )?;
+        for id in ids {
+            self.request(
+                &format!("lights/{}/state", id),
+                RequestType::Put,
+                Some(state),
+            )?;
+        }
         Ok(())
     }
 
@@ -188,13 +190,8 @@ impl HueBridge {
     /// Send state to all lights that can be found on the
     /// bridge
     pub fn all(&self, state: &SendableState) -> Result<(), Box<dyn std::error::Error>> {
-        for id in &self.lights.ids {
-            self.request(
-                &format!("lights/{}/state", id),
-                RequestType::Put,
-                Some(state),
-            )?;
-        }
+        self.state_by_ids(&self.lights.ids, state)
+            .expect("Unable to send all lights by ids");
         Ok(())
     }
 
