@@ -4,42 +4,73 @@ use lighthouse::{colors, state, HueBridge, SendableState};
 // TODO: if a light is provided by id then all the logic starts doing it on one light
 // TODO: instead of printing out exit with error code
 fn main() {
-    let matches = clap_app!(lighthouse =>
-                            (version: "0.0.1")
-                            (author: "Art Eidukas <iwiivi@gmail.com>")
-                            (about: "lighthouse - light automation from the comfort of your keyboard")
-                            (@subcommand on =>
-                             (about: "Turn all hue lights on")
-                            )
-                            (@subcommand off =>
-                             (about: "Turn all hue lights off")
-                            )
-                            (@subcommand bri =>
-                             (about: "Set brightness (turns on if off)")
-                             (@arg bri: "Brightness value (0 - 254)")
-                            )
-                            (@subcommand state =>
-                             (about: "Send state string to all hue lights")
-                             (@arg filename: -f --file +takes_value "Filename if providing state from file. If provided ignores text string")
-                             (@arg state: "Textual state to be sent")
-                            )
-                            (@subcommand info =>
-                             (about: "Print out useful information about your system")
-                            )
-                            (@subcommand discover =>
-                             (about: "Discover bridges on the network and print them")
-                            )
-                            (@subcommand loop =>
-                             (about: "Set all lights to colorloop")
-                            )
-                            (@subcommand color =>
-                             (about: "Color commands (WIP) the current API is unstable")
-                             (@arg red: "rgb value of red")
-                             (@arg green: "rgb value of green")
-                             (@arg blue: "rgb value of blue")
-                            )
-    )
-    .get_matches();
+    let matches = App::new("ligthouse")
+        .version("0.0.2")
+        .author("Art Eidukas <iwiivi@gmail.com>")
+        .about("lighthouse - light automation from the comfort of your keyboard")
+        .arg(
+            Arg::with_name("ids")
+                .short("i")
+                .long("ids")
+                .value_name("IDs")
+                .help("Comma delimited IDs of lights that will get affected by the command")
+                .takes_value(true)
+                .use_delimiter(true)
+                .global(true)
+        )
+        .subcommands(vec![
+            SubCommand::with_name("on").about("Turn hue lights on"),
+            SubCommand::with_name("off").about("Turn hue lights off"),
+            SubCommand::with_name("bri")
+                .about("Set brightness (turns lights on)")
+                .arg(
+                    Arg::with_name("bri")
+                        .value_name("BRIGHTNESS")
+                        .takes_value(true),
+                ),
+            SubCommand::with_name("state")
+                .about("Manually state to hue lights")
+                .arg(
+                    Arg::with_name("filename")
+                        .short("f")
+                        .long("file")
+                        .value_name("FILE")
+                        .takes_value(true)
+                        .help("Filename if providing state from file. If provided ignores text string")
+                )
+                .arg(
+                    Arg::with_name("state")
+                        .value_name("STATE")
+                        .required(true)
+                        .takes_value(true)
+                        .help("Textual state to be sent")
+                        .required_if("filename", "")
+                ),
+            SubCommand::with_name("info").about("Print out useful information about your system"),
+            SubCommand::with_name("discover").about("Discover bridges on the network and print them"),
+            SubCommand::with_name("loop").about("Set lights to colorloop"),
+            SubCommand::with_name("color").about("(WIP) Color commands the current API is unstable").arg(
+                    Arg::with_name("red")
+                        .value_name("RED")
+                        .required(true)
+                        .takes_value(true)
+                        .help("rgb value of red")
+            ).arg(
+                    Arg::with_name("green")
+                        .value_name("GREEN")
+                        .required(true)
+                        .takes_value(true)
+                        .help("rgb value of green")
+            ).arg(
+                    Arg::with_name("blue")
+                        .value_name("BLUE")
+                        .required(true)
+                        .takes_value(true)
+                        .help("rgb value of BLUE")
+            ),
+
+        ])
+        .get_matches();
 
     if matches.subcommand_matches("discover").is_some() {
         println!(
@@ -48,25 +79,40 @@ fn main() {
         );
     } else {
         let h = HueBridge::connect();
-
+        let ids: Vec<u8> = if let Some(matches) = matches.values_of("ids") {
+            // TODO: use a validator
+            matches.map(|s: &str| s.parse().unwrap()).collect()
+        } else {
+            Vec::new()
+        };
+        let run = |state: &SendableState, err: &str| {
+            if ids.is_empty() {
+                h.all(state).expect(err);
+            } else {
+                h.state_by_ids(&ids, state).expect(err);
+            }
+        };
         match matches.subcommand() {
             ("on", Some(_sub)) => {
-                h.all(state!(on: true, bri: 254))
-                    .expect("Error raised while turning all lights on");
+                let state = state!(on: true, bri: 254);
+                let err = "Error raised while turning all lights on";
+                run(state, err);
             }
             ("off", Some(_sub)) => {
-                h.all(state!(on: false))
-                    .expect("Error raised while turning all lights off");
+                let state = state!(on: false);
+                let err = "Error raised while turning all lights off";
+                run(state, err);
             }
             ("loop", Some(_sub)) => {
-                h.all(state!(on: true, effect: "colorloop".into()))
-                    .expect("Error raised while setting all lights to colorloop");
+                let state = state!(on: true, effect: "colorloop".into());
+                let err = "Error raised while turning lights to colorloop";
+                run(state, err);
             }
             ("bri", Some(sub)) => match sub.value_of("bri") {
                 Some(bri) => match bri.parse::<u8>() {
                     Ok(val) => {
-                        h.all(state!(on: true, bri: val))
-                            .expect("Error raised while adjusting brightness of all lights");
+                        let state = state!(on: true, bri: val);
+                        run(state, "Error raised while adjusting brightness of lights");
                     }
                     Err(e) => println!("Could not parse brightness value: {}", e),
                 },
@@ -82,8 +128,10 @@ fn main() {
                         match (red.parse::<u8>(), green.parse::<u8>(), blue.parse::<u8>()) {
                             (Ok(red), Ok(green), Ok(blue)) => {
                                 let xy = colors::rgb_to_xy(red, green, blue);
-                                h.all(state!(on: true, colormode: "xy".into(), xy: xy))
-                                    .expect("Error raised while setting color of all lights");
+                                run(
+                                    state!(on: true, colormode: "xy".into(), xy: xy),
+                                    "Error raised while setting color of all lights",
+                                );
                             }
                             (_, _, _) => println!("Could not parse an rgb value"),
                         }
@@ -96,8 +144,7 @@ fn main() {
                     if let Ok(file) = std::fs::File::open(filename) {
                         match serde_json::from_reader(std::io::BufReader::new(file)) {
                             Ok(state) => {
-                                h.all(&state)
-                                    .expect("Error raised while changing state of all lights");
+                                run(&state, "Error raised while changing state of all lights");
                             }
                             Err(e) => println!("Could not parse state: {}", e),
                         }
@@ -105,8 +152,7 @@ fn main() {
                 } else if let Some(state) = sub.value_of("state") {
                     match serde_json::from_str::<SendableState>(state) {
                         Ok(s) => {
-                            h.all(&s)
-                                .expect("Error raised while changing state of all lights");
+                            run(&s, "Error raised while changing state of all lights");
                         }
                         Err(e) => println!("Unable to parse text state: {}", e),
                     }
@@ -120,3 +166,4 @@ fn main() {
     }
 }
 // TODO: Add interactive mode where the user talks to it like PG
+// TODO: order commands in a nice way
