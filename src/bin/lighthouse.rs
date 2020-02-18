@@ -49,24 +49,13 @@ fn main() {
             SubCommand::with_name("info").about("Print out useful information about your system"),
             SubCommand::with_name("discover").about("Discover bridges on the network and print them"),
             SubCommand::with_name("loop").about("Set lights to colorloop"),
-            SubCommand::with_name("color").about("(WIP) Color commands the current API is unstable").arg(
-                    Arg::with_name("red")
-                        .value_name("RED")
+            SubCommand::with_name("color").about("Send colors to lights")
+            .arg(
+                    Arg::with_name("hexcode")
+                        .value_name("HEXCODE")
                         .required(true)
                         .takes_value(true)
-                        .help("rgb value of red")
-            ).arg(
-                    Arg::with_name("green")
-                        .value_name("GREEN")
-                        .required(true)
-                        .takes_value(true)
-                        .help("rgb value of green")
-            ).arg(
-                    Arg::with_name("blue")
-                        .value_name("BLUE")
-                        .required(true)
-                        .takes_value(true)
-                        .help("rgb value of BLUE")
+                        .help("Hex code for desired color (no hash)")
             ),
 
         ])
@@ -118,27 +107,18 @@ fn main() {
                 },
                 None => println!("Missing brightness value"),
             },
-            ("color", Some(sub)) => {
-                match (
-                    sub.value_of("red"),
-                    sub.value_of("green"),
-                    sub.value_of("blue"),
-                ) {
-                    (Some(red), Some(green), Some(blue)) => {
-                        match (red.parse::<u8>(), green.parse::<u8>(), blue.parse::<u8>()) {
-                            (Ok(red), Ok(green), Ok(blue)) => {
-                                let xy = colors::rgb_to_xy(red, green, blue);
-                                run(
-                                    state!(on: true, colormode: "xy".into(), xy: xy),
-                                    "Error raised while setting color of all lights",
-                                );
-                            }
-                            (_, _, _) => println!("Could not parse an rgb value"),
-                        }
+            ("color", Some(sub)) => match sub.value_of("hexcode") {
+                Some(hex) => match colors::hex_to_hsl(hex.into()) {
+                    Ok((h, s, l)) => {
+                        run(
+                            state!(on: true, colormode: "hs".into(), hue: h, sat: s, bri: l),
+                            "Error raised while setting color of all lights",
+                        );
                     }
-                    (_, _, _) => println!("Missing one rgb value"),
-                }
-            }
+                    _ => println!("Could not parse hex value: {}", hex),
+                },
+                _ => println!("Hexcode not provided"),
+            },
             ("state", Some(sub)) => {
                 if let Some(filename) = sub.value_of("filename") {
                     if let Ok(file) = std::fs::File::open(filename) {
@@ -167,3 +147,4 @@ fn main() {
 }
 // TODO: Add interactive mode where the user talks to it like PG
 // TODO: order commands in a nice way
+// TODO: RGB based color
