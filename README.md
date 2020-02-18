@@ -75,7 +75,7 @@ SUBCOMMANDS:
     loop        Set lights to colorloop
     off         Turn hue lights off
     on          Turn hue lights on
-    state       Manually state to hue lights
+    state       Manually send state to hue lights
 ```
 
 ## Short-term trajectory (timeline)
