@@ -78,22 +78,17 @@ SUBCOMMANDS:
     state       Manually send state to hue lights
 ```
 
-## Short-term trajectory (timeline)
-
-- Add color sending support (work in progress)
-- Get the CLI to be a bit more comprehensive (work in progress)
-- Add sending commands to lights by ID or Name
-
 ## Contributing
 
 The tool is good enough for me to be able to do most stuff I want to do. It does
 have the potential to become much more user friendly. I would love people to
 contribute:
 
-- If you have odd setups or things like light groups, even trying it out to see
-  if it breaks would be helpful
-- More CLI commands
 - Examples for the repository
+- If you have odd setups or things like light groups, even trying it out to see
+  if it breaks would be helpful. I don't know much about the API in detail so
+  might have missed edge cases
+- More CLI commands
 - Currently the `reqwest` client is not `async`, would be ideal if we could send
   the lights commands asynchronously rather than in a for loop.
 - Tests
