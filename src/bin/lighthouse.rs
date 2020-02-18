@@ -29,7 +29,7 @@ fn main() {
                         .takes_value(true),
                 ),
             SubCommand::with_name("state")
-                .about("Manually state to hue lights")
+                .about("Manually send state to hue lights")
                 .arg(
                     Arg::with_name("filename")
                         .short("f")
