@@ -4,7 +4,7 @@ use lighthouse::{colors, state, HueBridge, SendableState};
 // TODO: if a light is provided by id then all the logic starts doing it on one light
 // TODO: instead of printing out exit with error code
 fn main() {
-    let matches = App::new("ligthouse")
+    let matches = App::new("lightouse")
         .version("0.0.2")
         .author("Art Eidukas <iwiivi@gmail.com>")
         .about("lighthouse - light automation from the comfort of your keyboard")
