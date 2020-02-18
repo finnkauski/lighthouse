@@ -57,23 +57,25 @@ will run you through a Hue authentication flow.
 lighthouse - light automation from the comfort of your keyboard
 
 USAGE:
-    lh [SUBCOMMAND]
+    lh [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
 
+OPTIONS:
+    -i, --ids <IDs>    Comma delimited IDs of lights that will get affected by the command
+
 SUBCOMMANDS:
-    bri         Set brightness (turns on if off)
-    color       Color commands (WIP) the current API is unstable
+    bri         Set brightness (turns lights on)
+    color       Send colors to lights
     discover    Discover bridges on the network and print them
     help        Prints this message or the help of the given subcommand(s)
     info        Print out useful information about your system
-    loop        Set all lights to colorloop
-    off         Turn all hue lights off
-    on          Turn all hue lights on
-    state       Send state string to all hue lights
-
+    loop        Set lights to colorloop
+    off         Turn hue lights off
+    on          Turn hue lights on
+    state       Manually state to hue lights
 ```
 
 ## Short-term trajectory (timeline)
