@@ -18,6 +18,7 @@ dirs = "2.0.2"
 dotenv = "0.15.0"
 ssdp = "0.7.0"
 clap = "2.33.0"
+palette = "0.5.0"
 
 
 [[bin]]

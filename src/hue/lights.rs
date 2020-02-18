@@ -29,7 +29,7 @@ pub struct SendableState {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bri: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hue: Option<u32>,
+    pub hue: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sat: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
