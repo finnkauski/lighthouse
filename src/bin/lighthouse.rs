@@ -148,3 +148,5 @@ fn main() {
 // TODO: Add interactive mode where the user talks to it like PG
 // TODO: order commands in a nice way
 // TODO: RGB based color
+// TODO: refactor so you pass stuff with flags
+// TODO: longer delay for discover
