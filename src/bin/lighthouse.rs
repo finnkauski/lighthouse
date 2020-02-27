@@ -4,62 +4,7 @@ use lighthouse::{colors, state, HueBridge, SendableState};
 // TODO: if a light is provided by id then all the logic starts doing it on one light
 // TODO: instead of printing out exit with error code
 fn main() {
-    let matches = App::new("lightouse")
-        .version("0.1.0")
-        .author("Art Eidukas <iwiivi@gmail.com>")
-        .about("lighthouse - light automation from the comfort of your keyboard")
-        .arg(
-            Arg::with_name("ids")
-                .short("i")
-                .long("ids")
-                .value_name("IDs")
-                .help("Comma delimited IDs of lights that will get affected by the command")
-                .takes_value(true)
-                .use_delimiter(true)
-                .global(true)
-        )
-        .subcommands(vec![
-            SubCommand::with_name("on").about("Turn hue lights on"),
-            SubCommand::with_name("off").about("Turn hue lights off"),
-            SubCommand::with_name("bri")
-                .about("Set brightness (turns lights on)")
-                .arg(
-                    Arg::with_name("bri")
-                        .value_name("BRIGHTNESS")
-                        .takes_value(true),
-                ),
-            SubCommand::with_name("state")
-                .about("Manually send state to hue lights")
-                .arg(
-                    Arg::with_name("filename")
-                        .short("f")
-                        .long("file")
-                        .value_name("FILE")
-                        .takes_value(true)
-                        .help("Filename if providing state from file. If provided ignores text string")
-                )
-                .arg(
-                    Arg::with_name("state")
-                        .value_name("STATE")
-                        .required(true)
-                        .takes_value(true)
-                        .help("Textual state to be sent")
-                        .required_if("filename", "")
-                ),
-            SubCommand::with_name("info").about("Print out useful information about your system"),
-            SubCommand::with_name("discover").about("Discover bridges on the network and print them"),
-            SubCommand::with_name("loop").about("Set lights to colorloop"),
-            SubCommand::with_name("color").about("Send colors to lights")
-            .arg(
-                    Arg::with_name("hexcode")
-                        .value_name("HEXCODE")
-                        .required(true)
-                        .takes_value(true)
-                        .help("Hex code for desired color (no hash)")
-            ),
-
-        ])
-        .get_matches();
+    let matches = create_app().get_matches();
 
     if matches.subcommand_matches("discover").is_some() {
         println!(
@@ -150,3 +95,60 @@ fn main() {
 // TODO: RGB based color
 // TODO: refactor so you pass stuff with flags
 // TODO: longer delay for discover
+fn create_app() -> clap::App<'static, 'static> {
+    App::new("lightouse")
+        .version("0.1.0")
+        .author("Art Eidukas <iwiivi@gmail.com>")
+        .about("lighthouse - light automation from the comfort of your keyboard")
+        .arg(
+            Arg::with_name("ids")
+                .short("i")
+                .long("ids")
+                .value_name("IDs")
+                .help("Comma delimited IDs of lights that will get affected by the command")
+                .takes_value(true)
+                .use_delimiter(true)
+                .global(true)
+        )
+        .subcommands(vec![
+            SubCommand::with_name("on").about("Turn hue lights on"),
+            SubCommand::with_name("off").about("Turn hue lights off"),
+            SubCommand::with_name("bri")
+                .about("Set brightness (turns lights on)")
+                .arg(
+                    Arg::with_name("bri")
+                        .value_name("BRIGHTNESS")
+                        .takes_value(true),
+                ),
+            SubCommand::with_name("state")
+                .about("Manually send state to hue lights")
+                .arg(
+                    Arg::with_name("filename")
+                        .short("f")
+                        .long("file")
+                        .value_name("FILE")
+                        .takes_value(true)
+                        .help("Filename if providing state from file. If provided ignores text string")
+                )
+                .arg(
+                    Arg::with_name("state")
+                        .value_name("STATE")
+                        .required(true)
+                        .takes_value(true)
+                        .help("Textual state to be sent")
+                        .required_if("filename", "")
+                ),
+            SubCommand::with_name("info").about("Print out useful information about your system"),
+            SubCommand::with_name("discover").about("Discover bridges on the network and print them"),
+            SubCommand::with_name("loop").about("Set lights to colorloop"),
+            SubCommand::with_name("color").about("Send colors to lights")
+            .arg(
+                    Arg::with_name("hexcode")
+                        .value_name("HEXCODE")
+                        .required(true)
+                        .takes_value(true)
+                        .help("Hex code for desired color (no hash)")
+            ),
+
+        ])
+}
