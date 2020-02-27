@@ -5,7 +5,7 @@ use lighthouse::{colors, state, HueBridge, SendableState};
 // TODO: instead of printing out exit with error code
 fn main() {
     let matches = App::new("lightouse")
-        .version("0.0.2")
+        .version("0.1.0")
         .author("Art Eidukas <iwiivi@gmail.com>")
         .about("lighthouse - light automation from the comfort of your keyboard")
         .arg(
