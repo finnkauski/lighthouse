@@ -2,6 +2,7 @@ use clap::*;
 use lighthouse::{colors, state, HueBridge, SendableState};
 
 // TODO: if a light is provided by id then all the logic starts doing it on one light
+// TODO: implement mode that doesn't change color brightness just h and s and add lighthouse.el wrapping for lightspeed
 // TODO: instead of printing out exit with error code
 fn main() {
     let matches = create_app().get_matches();
@@ -56,7 +57,7 @@ fn main() {
                 Some(hex) => match colors::hex_to_hsl(hex.into()) {
                     Ok((h, s, l)) => {
                         run(
-                            state!(on: true, colormode: "hs".into(), hue: h, sat: s, bri: l),
+                            state!(colormode: "hs".into(), hue: h, sat: s, bri: l),
                             "Error raised while setting color of all lights",
                         );
                     }
