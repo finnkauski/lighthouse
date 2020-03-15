@@ -80,6 +80,8 @@ SUBCOMMANDS:
 
 ## Contributing
 
+>This repo would benefit in some form of packaging for MAC/WINDOWS/LINUX so people don't need to install rust.
+
 The tool is good enough for me to be able to do most stuff I want to do. It does
 have the potential to become much more user friendly. I would love people to
 contribute:
