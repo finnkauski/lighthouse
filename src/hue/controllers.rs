@@ -200,7 +200,7 @@ impl HueBridge {
     /// - ids
     /// - number of lights
     ///
-    fn scan(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn scan(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         // collect the state of the system
         let lights: std::collections::BTreeMap<u8, Light> =
             self.request("lights", RequestType::Get, None)?.json()?;
