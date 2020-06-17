@@ -14,6 +14,9 @@ don't have any other branded smart light or other smart home tech to integrate.
 [lighthouse.el](https://github.com/finnkauski/lighthouse.el) - an Emacs package
 wrapping the functionality of `lighthouse`. 
 
+[lightshow](https://github.com/finnkauski/lightshow) - A simple scripting language
+allowing you to script your lights into lightshows.
+
 ## Installation
 
 As it is under development you will need the `Rust` and `cargo` installed.
