@@ -522,6 +522,7 @@ dependencies = [
  "futures",
  "reqwest",
  "serde",
+ "serde_json",
  "ssdp",
  "tokio",
  "url 2.1.1",

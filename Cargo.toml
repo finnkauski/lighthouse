@@ -17,7 +17,7 @@ futures = "0.3.5"
 ssdp = "0.7.0"
 url = "2.1.1"
 serde = {version = "*", features = ["derive"]}
-# serde_json = "*"
+serde_json = "*"
 # dirs = "2.0.2"
 # dotenv = "0.15.0"
 # clap = "2.33.0"
