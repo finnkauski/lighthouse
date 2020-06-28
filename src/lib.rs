@@ -244,6 +244,12 @@ pub mod lights {
         }
     }
 
+    impl std::fmt::Display for Light {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "Name: {}\nOn: {:?}", self.name, self.state.on)
+        }
+    }
+
     /// Light object representing the complete state of a light
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Light {
