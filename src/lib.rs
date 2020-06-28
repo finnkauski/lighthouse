@@ -4,14 +4,14 @@ pub mod helpers {
     use url::Url;
 
     /// Generates the target URL for the bridge
-    pub fn generate_target(address: IpAddr, token: &str) -> Result<Url, String> {
+    pub fn generate_target(address: IpAddr, token: &str) -> Result<Url, ()> {
         let mut target = Url::parse("http://localhost").unwrap(); // Unwrap as it can't fail in parsing
         let path = format!("api/{}/", token);
         target.set_path(&path[..]);
-        match target.set_ip_host(address) {
-            Ok(_) => Ok(target),
-            Err(_) => Err("Could not set the ip address as the url".into()),
+        if target.set_ip_host(address).is_ok() {
+            return Ok(target);
         }
+        Err(())
     }
 
     pub mod network {
@@ -46,7 +46,7 @@ pub mod helpers {
         /// NewStates is a convenience alias allowing us to store
         /// optional vectors of states that we want to send if we
         /// are using PUT or POST to a given endpoint
-        type NewStates<'a> = Vec<Option<&'a SendableState>>;
+        pub type NewStates<'a> = Vec<Option<&'a SendableState>>;
 
         /// Convenience type alias for a possible Result from the reqwest client
         type ResponseResult = Result<reqwest::Response, reqwest::Error>;
@@ -56,8 +56,8 @@ pub mod helpers {
         pub async fn send_request(
             request_target: RequestTarget,
             state: Option<&SendableState>,
+            client: &reqwest::Client,
         ) -> ResponseResult {
-            let client = reqwest::Client::new();
             let (target, method) = request_target;
             match method {
                 AllowedMethod::POST => client.post(target).json(&state).send().await,
@@ -73,12 +73,13 @@ pub mod helpers {
         pub async fn send_requests(
             request_targets: RequestTargets,
             states: NewStates<'_>,
+            client: &reqwest::Client,
         ) -> Vec<ResponseResult> {
             futures::future::join_all(
                 request_targets
                     .into_iter()
                     .zip(states.into_iter())
-                    .map(|(target, state)| send_request(target, state)),
+                    .map(|(target, state)| send_request(target, state, client)),
             )
             .await
         }
@@ -103,37 +104,76 @@ pub mod bridge {
     #[derive(Debug)]
     pub struct Bridge {
         pub target: Url,
+        client: reqwest::Client,
     }
 
+    /// # Take it to the Bridge!
+    ///
+    /// This is the Bridge object - the core of the library.
+    ///
+    /// This is the manager struct that implements all the core methods that are required to interact
+    /// with the HueBridge. It has a bunch of convenience functions such as sending state, scanning for lights,
+    /// getting the information about your existing lights and finding bridge IP addresses with SSDP.
     impl Bridge {
         /// Constructor for a bridge from and IP and a token
-        pub fn new(ip: IpAddr, token: &str) -> Result<Self, String> {
+        pub fn new(ip: IpAddr, token: &str) -> Result<Self, ()> {
             let target = generate_target(ip, token)?;
-            Ok(Bridge { target })
+            let client = reqwest::Client::new();
+            Ok(Bridge { target, client })
         }
 
         pub fn scan(&mut self) -> BTreeMap<u8, Light> {
             let endpoint = self.get_endpoint("./lights", AllowedMethod::GET);
-            let lights: BTreeMap<u8, Light> =
-                run_future(async { send_request(endpoint, None).await?.json().await })
-                    .expect("Could not completely decode/send request");
+            let lights: BTreeMap<u8, Light> = run_future(async {
+                send_request(endpoint, None, &self.client)
+                    .await?
+                    .json()
+                    .await
+            })
+            .expect("Could not completely decode/send request");
             lights
         }
 
-        /// Send state to a given id
+        /// Sends a state to a given light by its ID on the system.
+        ///
+        /// This is useful when you want to send a given state to one light
+        /// on the network.
         pub fn state_to(&mut self, id: u8, new_state: &SendableState) -> reqwest::Response {
             let endpoint =
                 self.get_endpoint(&format!("./lights/{}/state", id)[..], AllowedMethod::PUT);
-            run_future(send_request(endpoint, Some(new_state)))
+            run_future(send_request(endpoint, Some(new_state), &self.client))
                 .expect(&format!("Could not send state to light: {}", id)[..])
         }
 
-        /// Get endpoint generated from the bridge target
+        /// Send a state object to all lights on the network.
+        pub fn state_to_multiple(
+            &mut self,
+            ids: impl IntoIterator<Item = u8>,
+            new_states: Vec<&SendableState>,
+        ) -> Result<Vec<reqwest::Response>, reqwest::Error> {
+            let endpoints = ids
+                .into_iter()
+                .map(|id| {
+                    self.get_endpoint(&format!("./lights/{}/state", id)[..], AllowedMethod::PUT)
+                })
+                .collect();
+            let states = new_states.into_iter().map(Some).collect();
+
+            run_future(send_requests(endpoints, states, &self.client))
+                .into_iter()
+                .collect()
+        }
+
+        /// Provided an endpoint string, and a method it will create a `RequestTarget` that can
+        /// be sent a request. The final URI will depend on the `self.target` field and the string
+        /// provided.
         fn get_endpoint(&self, s: &str, method: AllowedMethod) -> RequestTarget {
             (self.target.join(s).unwrap(), method)
         }
 
-        /// Method to find bridge ip addressed on the network
+        /// Method to find bridge IP addressed on the network.
+        ///
+        /// If multiple are found, they are all returned.
         pub fn find_bridges() -> Vec<IpAddr> {
             use ssdp::header::{HeaderMut, Man, MX, ST};
             use ssdp::message::{Multicast, SearchRequest};
@@ -159,6 +199,74 @@ pub mod bridge {
             result.dedup();
 
             result
+        }
+
+        /// Print useful information about the state of your system
+        ///
+        /// Namely, asks for all available lights and print a JSON representation
+        /// of the system to STDOUT.
+        pub fn system_info(&self) {
+            match run_future(async {
+                send_request(
+                    self.get_endpoint("./lights", AllowedMethod::GET),
+                    None,
+                    &self.client,
+                )
+                .await
+                .expect("Could not perform request")
+                .json()
+                .await
+            }) {
+                Ok(resp) => {
+                    let r: serde_json::Value = resp;
+                    println!("{}", serde_json::to_string_pretty(&r).unwrap());
+                }
+                Err(e) => {
+                    println!("Could not send the get request: {}", e);
+                }
+            };
+        }
+
+        /// Conditional feature:
+        ///
+        /// If `persist` feature is enabled, then this allows creating a bridge from environment
+        /// variables.
+        ///
+        /// The variables that will be looked up are:
+        /// - HUE_BRIDGE_IP - the IP of the bridge on the local network
+        /// - HUE_BRIDGE_KEY - the KEY that you get when you register to the bridge.
+        #[cfg(feature = "persist")]
+        pub fn from_env() -> Bridge {
+            let ip = std::env::var("HUE_BRIDGE_IP")
+                .expect("Could not find HUE_BRIDGE_IP environment variable.")
+                .parse()
+                .expect("Could not parse the address in the variable: HUE_BRIDGE_IP.");
+            let key = std::env::var("HUE_BRIDGE_KEY")
+                .expect("Could not find HUE_BRIDGE_KEY environment variable.");
+
+            Bridge::new(ip, &key).expect(&format!("Could not create new bridge (IP {})", ip)[..])
+        }
+
+        // TODO: Make this into trait
+        /// Conditional feature:
+        ///
+        /// If one wants to use `ron` to serialise the Bridge, this provides a method to save the bridge
+        /// to a text file using `ron`.
+        ///
+        /// Note: Enable the `ron` feature.
+        #[cfg(feature = "persist")]
+        pub fn to_ron(&self, _filename: &str) {
+            todo!()
+        }
+
+        /// Conditional feature:
+        ///
+        /// Allows loading a Bridge from a `ron` file.
+        ///
+        /// Note: Enable the `ron` feature.
+        #[cfg(feature = "persist")]
+        pub fn from_ron(&self, _filename: &str) {
+            todo!()
         }
     }
 }
@@ -343,7 +451,8 @@ mod tests {
                 ),
             ];
             let states = vec![None, None, None];
-            let correct: bool = run_future(send_requests(targets, states))
+            let client = reqwest::Client::new();
+            let correct: bool = run_future(send_requests(targets, states, &client))
                 .into_iter()
                 .all(|r| r.unwrap().status() == 200);
             assert!(correct);
