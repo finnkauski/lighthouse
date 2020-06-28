@@ -1,27 +1,7 @@
 pub mod helpers {
     // imports
-    use super::lights::SendableState;
     use std::net::IpAddr;
     use url::Url;
-
-    /// Defines the allowed methods to be sent to bridge
-    pub enum AllowedMethod {
-        GET,
-        PUT,
-        POST,
-    }
-
-    /// Implementated to allow controlled conversion into reqwest
-    /// methods and not allow undefined methods to be sent to bridge
-    impl std::convert::From<AllowedMethod> for reqwest::Method {
-        fn from(value: AllowedMethod) -> Self {
-            match value {
-                AllowedMethod::GET => reqwest::Method::GET,
-                AllowedMethod::POST => reqwest::Method::POST,
-                AllowedMethod::PUT => reqwest::Method::PUT,
-            }
-        }
-    }
 
     /// Generates the target URL for the bridge
     pub fn generate_target(address: IpAddr, token: &str) -> Result<Url, String> {
@@ -34,94 +14,121 @@ pub mod helpers {
         }
     }
 
-    /// This type alias is a URL and a type of Request to be sent
-    pub type RequestTarget = (Url, AllowedMethod);
+    pub mod network {
+        use crate::lights::SendableState;
+        use url::Url;
 
-    /// This alias allows us to store multiple targeted lights
-    type RequestTargets = Vec<RequestTarget>;
-
-    /// NewStates is a convenience alias allowing us to store
-    /// optional vectors of states that we want to send if we
-    /// are using PUT or POST to a given endpoint
-    type NewStates<'a> = Vec<Option<&'a SendableState>>;
-
-    /// Convenience type alias for a possible Result from the reqwest client
-    type ResponseResult = Result<reqwest::Response, reqwest::Error>;
-
-    /// Function wrapping the request sending functionality
-    /// to a location.
-    pub async fn send_request(
-        request_target: RequestTarget,
-        state: Option<&SendableState>,
-    ) -> ResponseResult {
-        let client = reqwest::Client::new();
-        let (target, method) = request_target;
-        match method {
-            AllowedMethod::POST => client.post(target).json(&state).send().await,
-            AllowedMethod::GET => client.get(target).send().await,
-            AllowedMethod::PUT => client.put(target).json(&state).send().await,
+        /// Defines the allowed methods to be sent to bridge
+        pub enum AllowedMethod {
+            GET,
+            PUT,
+            POST,
         }
-    }
 
-    /// Function that sends off several states to the lights
-    /// This is much more key than individual requests functionality provided by the
-    /// send_request function as this is allowing us to do this asynchronously across
-    /// an arbitrary selection of lights.
-    pub async fn send_requests(
-        request_targets: RequestTargets,
-        states: NewStates<'_>,
-    ) -> Vec<ResponseResult> {
-        futures::future::join_all(
-            request_targets
-                .into_iter()
-                .zip(states.into_iter())
-                .map(|(target, state)| send_request(target, state)),
-        )
-        .await
+        /// Implementated to allow controlled conversion into reqwest
+        /// methods and not allow undefined methods to be sent to bridge
+        impl std::convert::From<AllowedMethod> for reqwest::Method {
+            fn from(value: AllowedMethod) -> Self {
+                match value {
+                    AllowedMethod::GET => reqwest::Method::GET,
+                    AllowedMethod::POST => reqwest::Method::POST,
+                    AllowedMethod::PUT => reqwest::Method::PUT,
+                }
+            }
+        }
+
+        /// This type alias is a URL and a type of Request to be sent
+        pub type RequestTarget = (Url, AllowedMethod);
+
+        /// This alias allows us to store multiple targeted lights
+        type RequestTargets = Vec<RequestTarget>;
+
+        /// NewStates is a convenience alias allowing us to store
+        /// optional vectors of states that we want to send if we
+        /// are using PUT or POST to a given endpoint
+        type NewStates<'a> = Vec<Option<&'a SendableState>>;
+
+        /// Convenience type alias for a possible Result from the reqwest client
+        type ResponseResult = Result<reqwest::Response, reqwest::Error>;
+
+        /// Function wrapping the request sending functionality
+        /// to a location.
+        pub async fn send_request(
+            request_target: RequestTarget,
+            state: Option<&SendableState>,
+        ) -> ResponseResult {
+            let client = reqwest::Client::new();
+            let (target, method) = request_target;
+            match method {
+                AllowedMethod::POST => client.post(target).json(&state).send().await,
+                AllowedMethod::GET => client.get(target).send().await,
+                AllowedMethod::PUT => client.put(target).json(&state).send().await,
+            }
+        }
+
+        /// Function that sends off several states to the lights
+        /// This is much more key than individual requests functionality provided by the
+        /// send_request function as this is allowing us to do this asynchronously across
+        /// an arbitrary selection of lights.
+        pub async fn send_requests(
+            request_targets: RequestTargets,
+            states: NewStates<'_>,
+        ) -> Vec<ResponseResult> {
+            futures::future::join_all(
+                request_targets
+                    .into_iter()
+                    .zip(states.into_iter())
+                    .map(|(target, state)| send_request(target, state)),
+            )
+            .await
+        }
+
+        #[tokio::main]
+        pub async fn run_future<T>(fut: impl std::future::Future<Output = T>) -> T {
+            fut.await
+        }
     }
 }
 
 pub mod bridge {
     // imports
-    use super::helpers::*;
-    use super::lights::*;
+    use super::{
+        helpers::{network::*, *},
+        lights::*,
+    };
     use std::collections::BTreeMap;
     use std::net::IpAddr;
     use url::Url;
 
-    type BridgeError = String;
-
     #[derive(Debug)]
     pub struct Bridge {
         pub target: Url,
-        runtime: tokio::runtime::Runtime,
     }
 
     impl Bridge {
         /// Constructor for a bridge from and IP and a token
-        pub fn new(ip: IpAddr, token: &str) -> Result<Self, BridgeError> {
+        pub fn new(ip: IpAddr, token: &str) -> Result<Self, String> {
             let target = generate_target(ip, token)?;
-            let runtime = tokio::runtime::Runtime::new().unwrap(); // TODO: this is not safe
-            Ok(Bridge { target, runtime })
+            Ok(Bridge { target })
         }
 
         pub fn scan(&mut self) -> BTreeMap<u8, Light> {
             let endpoint = self.get_endpoint("./lights", AllowedMethod::GET);
-            let lights: BTreeMap<u8, Light> = self
-                .runtime
-                .block_on(async { send_request(endpoint, None).await?.json().await })
-                .expect("Could not completely decode/send request");
+            let lights: BTreeMap<u8, Light> =
+                run_future(async { send_request(endpoint, None).await?.json().await })
+                    .expect("Could not completely decode/send request");
             lights
         }
 
+        /// Send state to a given id
         pub fn state_to(&mut self, id: u8, new_state: &SendableState) -> reqwest::Response {
             let endpoint =
                 self.get_endpoint(&format!("./lights/{}/state", id)[..], AllowedMethod::PUT);
-            self.runtime
-                .block_on(send_request(endpoint, Some(new_state)))
+            run_future(send_request(endpoint, Some(new_state)))
                 .expect(&format!("Could not send state to light: {}", id)[..])
         }
 
+        /// Get endpoint generated from the bridge target
         fn get_endpoint(&self, s: &str, method: AllowedMethod) -> RequestTarget {
             (self.target.join(s).unwrap(), method)
         }
@@ -165,11 +172,11 @@ pub mod lights {
     /// `State`.
     ///
     /// ```
-    /// use lighthouse::*;
+    /// use lighthouse::{lights::*, state};
     /// let state_1: SendableState = serde_json::from_str(r#"{"on":true}"#).unwrap();
     /// let state_2: SendableState = SendableState {on:Some(true), ..SendableState::default()};
-    /// let state_3: SendableState = state!(on: true, xy: [1.0, 0.123]);
-    /// let state_4: &SendableState = state!(ref, on: true, xy: [1.0, 0.123]);
+    /// let state_3: &SendableState = state!(on: true, xy: [1.0, 0.123]);
+    /// let state_4: SendableState = state!(nonref; on: true, xy: [1.0, 0.123]);
     /// ```
     #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct SendableState {
@@ -246,7 +253,7 @@ pub mod lights {
 
     impl std::fmt::Display for Light {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "Name: {}\nOn: {:?}", self.name, self.state.on)
+            write!(f, "{{ on: {} }} : {}", self.state.on, self.name)
         }
     }
 
@@ -270,13 +277,13 @@ pub mod lights {
 
     /// Super useful macro to create `SendableState`
     /// ```
-    /// use lighthouse::*;
+    /// use lighthouse::{lights::*, state};
     /// // Usage examples
     /// // Returns a reference, most useful as a default
     /// let sendable_state: &SendableState = state!(on: true, xy: [1.0, 0.0]);
     ///
     /// // Returns a value, still useful.
-    /// let sendable_state: SendableState = state!(nonref, on: true, xy: [1.0, 0.0]);
+    /// let sendable_state: SendableState = state!(nonref; on: true, xy: [1.0, 0.0]);
     /// ```
     #[macro_export]
     macro_rules! state {
@@ -287,7 +294,7 @@ pub mod lights {
         }
     };
 
-    (non-ref; $($i:ident:$v:expr),*) => {
+    (nonref; $($i:ident:$v:expr),*) => {
         lighthouse::lights::SendableState {
             $($i: Some($v),)*
             ..lighthouse::lights::SendableState::default()
@@ -314,40 +321,32 @@ mod tests {
             let addr: IpAddr = "192.168.0.1".parse().unwrap();
             assert_eq!(
                 crate::helpers::generate_target(addr, "tokengoeshere1234").unwrap(),
-                Url::parse("https://192.168.0.1/api/tokengoeshere1234/").unwrap()
+                Url::parse("http://192.168.0.1/api/tokengoeshere1234/").unwrap()
             )
         }
 
         #[test]
         fn test_httpbin_get() {
-            use crate::helpers::{request, AllowedMethod};
-            assert_eq!(
-                request(
+            use crate::helpers::network::{run_future, send_requests, AllowedMethod};
+            let targets = vec![
+                (
                     url::Url::parse("https://httpbin.org/get").unwrap(),
                     AllowedMethod::GET,
-                    None
-                )
-                .status(),
-                200
-            );
-            assert_eq!(
-                request(
-                    url::Url::parse("https://httpbin.org/put").unwrap(),
-                    AllowedMethod::PUT,
-                    None
-                )
-                .status(),
-                200
-            );
-            assert_eq!(
-                request(
+                ),
+                (
                     url::Url::parse("https://httpbin.org/post").unwrap(),
                     AllowedMethod::POST,
-                    None
-                )
-                .status(),
-                200
-            );
+                ),
+                (
+                    url::Url::parse("https://httpbin.org/put").unwrap(),
+                    AllowedMethod::PUT,
+                ),
+            ];
+            let states = vec![None, None, None];
+            let correct: bool = run_future(send_requests(targets, states))
+                .into_iter()
+                .all(|r| r.unwrap().status() == 200);
+            assert!(correct);
         }
     }
 }
