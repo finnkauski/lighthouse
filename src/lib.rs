@@ -83,11 +83,6 @@ pub mod helpers {
             )
             .await
         }
-
-        #[tokio::main]
-        pub async fn run_future<T>(fut: impl std::future::Future<Output = T>) -> T {
-            fut.await
-        }
     }
 }
 
@@ -99,12 +94,14 @@ pub mod bridge {
     };
     use std::collections::BTreeMap;
     use std::net::IpAddr;
+    use tokio::runtime::Runtime;
     use url::Url;
 
     #[derive(Debug)]
     pub struct Bridge {
         pub target: Url,
         client: reqwest::Client,
+        runtime: Runtime,
     }
 
     /// # Take it to the Bridge!
@@ -119,18 +116,22 @@ pub mod bridge {
         pub fn new(ip: IpAddr, token: &str) -> Result<Self, ()> {
             let target = generate_target(ip, token)?;
             let client = reqwest::Client::new();
-            Ok(Bridge { target, client })
+            let runtime = Runtime::new()
+                .expect("Could not create tokio runtime during the creation of the Bridge");
+            Ok(Bridge {
+                target,
+                client,
+                runtime,
+            })
         }
 
         pub fn scan(&mut self) -> BTreeMap<u8, Light> {
             let endpoint = self.get_endpoint("./lights", AllowedMethod::GET);
-            let lights: BTreeMap<u8, Light> = run_future(async {
-                send_request(endpoint, None, &self.client)
-                    .await?
-                    .json()
-                    .await
-            })
-            .expect("Could not completely decode/send request");
+            let fut = send_request(endpoint, None, &self.client);
+            let lights: BTreeMap<u8, Light> = self
+                .runtime
+                .block_on(async { fut.await?.json().await })
+                .expect("Could not completely decode/send request");
             lights
         }
 
@@ -141,7 +142,8 @@ pub mod bridge {
         pub fn state_to(&mut self, id: u8, new_state: &SendableState) -> reqwest::Response {
             let endpoint =
                 self.get_endpoint(&format!("./lights/{}/state", id)[..], AllowedMethod::PUT);
-            run_future(send_request(endpoint, Some(new_state), &self.client))
+            self.runtime
+                .block_on(send_request(endpoint, Some(new_state), &self.client))
                 .expect(&format!("Could not send state to light: {}", id)[..])
         }
 
@@ -159,7 +161,8 @@ pub mod bridge {
                 .collect();
             let states = new_states.into_iter().map(Some).collect();
 
-            run_future(send_requests(endpoints, states, &self.client))
+            self.runtime
+                .block_on(send_requests(endpoints, states, &self.client))
                 .into_iter()
                 .collect()
         }
@@ -205,18 +208,16 @@ pub mod bridge {
         ///
         /// Namely, asks for all available lights and print a JSON representation
         /// of the system to STDOUT.
-        pub fn system_info(&self) {
-            match run_future(async {
-                send_request(
-                    self.get_endpoint("./lights", AllowedMethod::GET),
-                    None,
-                    &self.client,
-                )
-                .await
-                .expect("Could not perform request")
-                .json()
-                .await
-            }) {
+        pub fn system_info(&mut self) {
+            let fut = send_request(
+                self.get_endpoint("./lights", AllowedMethod::GET),
+                None,
+                &self.client,
+            );
+            match self
+                .runtime
+                .block_on(async { fut.await.expect("Could not perform request").json().await })
+            {
                 Ok(resp) => {
                     let r: serde_json::Value = resp;
                     println!("{}", serde_json::to_string_pretty(&r).unwrap());
@@ -247,7 +248,6 @@ pub mod bridge {
             Bridge::new(ip, &key).expect(&format!("Could not create new bridge (IP {})", ip)[..])
         }
 
-        // TODO: Make this into trait
         /// Conditional feature:
         ///
         /// If one wants to use `ron` to serialise the Bridge, this provides a method to save the bridge
@@ -255,7 +255,7 @@ pub mod bridge {
         ///
         /// Note: Enable the `ron` feature.
         #[cfg(feature = "persist")]
-        pub fn to_ron(&self, _filename: &str) {
+        pub fn to_ron(&self, filename: &str) {
             todo!()
         }
 
