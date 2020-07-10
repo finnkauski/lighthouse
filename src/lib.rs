@@ -50,6 +50,7 @@ pub mod helpers {
 
         /// Convenience type alias for a possible Result from the reqwest client
         type ResponseResult = Result<reqwest::Response, reqwest::Error>;
+        type IndexedResponseResult = (usize, ResponseResult);
 
         /// Function wrapping the request sending functionality
         /// to a location.
@@ -66,6 +67,15 @@ pub mod helpers {
             }
         }
 
+        pub async fn send_request_indexed(
+            index: usize,
+            request_target: RequestTarget,
+            state: Option<&SendableState>,
+            client: &reqwest::Client,
+        ) -> IndexedResponseResult {
+            (index, send_request(request_target, state, client).await)
+        }
+
         /// Function that sends off several states to the lights
         /// This is much more key than individual requests functionality provided by the
         /// send_request function as this is allowing us to do this asynchronously across
@@ -75,13 +85,19 @@ pub mod helpers {
             states: NewStates<'_>,
             client: &reqwest::Client,
         ) -> Vec<ResponseResult> {
-            futures::future::join_all(
-                request_targets
-                    .into_iter()
-                    .zip(states.into_iter())
-                    .map(|(target, state)| send_request(target, state, client)),
-            )
-            .await
+            use tokio::stream::StreamExt;
+            let mut f: futures::stream::FuturesUnordered<_> = request_targets
+                .into_iter()
+                .zip(states.into_iter())
+                .enumerate()
+                .map(|(i, (target, state))| send_request_indexed(i, target, state, client))
+                .collect();
+            let mut res = Vec::with_capacity(f.len());
+            while let Some(tup) = f.next().await {
+                res.push(tup);
+            }
+            res.sort_by_key(|tuple| tuple.0);
+            res.into_iter().map(|tup| tup.1).collect()
         }
     }
 }
@@ -116,7 +132,10 @@ pub mod bridge {
         pub fn new(ip: IpAddr, token: &str) -> Result<Self, ()> {
             let target = generate_target(ip, token)?;
             let client = reqwest::Client::new();
-            let runtime = Runtime::new()
+            let runtime = tokio::runtime::Builder::new()
+                .basic_scheduler()
+                .enable_all()
+                .build()
                 .expect("Could not create tokio runtime during the creation of the Bridge");
             Ok(Bridge {
                 target,
