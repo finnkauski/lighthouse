@@ -40,14 +40,6 @@ pub mod helpers {
         /// This type alias is a URL and a type of Request to be sent
         pub type RequestTarget = (Url, AllowedMethod);
 
-        /// This alias allows us to store multiple targeted lights
-        type RequestTargets = Vec<RequestTarget>;
-
-        /// NewStates is a convenience alias allowing us to store
-        /// optional vectors of states that we want to send if we
-        /// are using PUT or POST to a given endpoint
-        pub type NewStates<'a> = Vec<Option<&'a SendableState>>;
-
         /// Convenience type alias for a possible Result from the reqwest client
         type ResponseResult = Result<reqwest::Response, reqwest::Error>;
         type IndexedResponseResult = (usize, ResponseResult);
@@ -81,8 +73,8 @@ pub mod helpers {
         /// send_request function as this is allowing us to do this asynchronously across
         /// an arbitrary selection of lights.
         pub async fn send_requests(
-            request_targets: RequestTargets,
-            states: NewStates<'_>,
+            request_targets: impl IntoIterator<Item = RequestTarget>,
+            states: impl IntoIterator<Item = Option<&SendableState>>,
             client: &reqwest::Client,
         ) -> Vec<ResponseResult> {
             use tokio::stream::StreamExt;
@@ -167,18 +159,18 @@ pub mod bridge {
         }
 
         /// Send a state object to all lights on the network.
-        pub fn state_to_multiple(
+        pub fn state_to_multiple<'a>(
             &mut self,
             ids: impl IntoIterator<Item = u8>,
-            new_states: Vec<&SendableState>,
+            new_states: impl IntoIterator<Item = &'a SendableState>,
         ) -> Result<Vec<reqwest::Response>, reqwest::Error> {
-            let endpoints = ids
+            let endpoints: Vec<_> = ids
                 .into_iter()
                 .map(|id| {
                     self.get_endpoint(&format!("./lights/{}/state", id)[..], AllowedMethod::PUT)
                 })
                 .collect();
-            let states = new_states.into_iter().map(Some).collect();
+            let states = new_states.into_iter().map(Some);
 
             self.runtime
                 .block_on(send_requests(endpoints, states, &self.client))
