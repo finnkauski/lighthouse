@@ -537,7 +537,7 @@ checksum = "d515b1f41455adea1313a4a2ac8a8a477634fbae63cc6100e3aebb207ce61558"
 
 [[package]]
 name = "lighthouse"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "dirs",
  "dotenv",
@@ -962,18 +962,6 @@ dependencies = [
  "mio",
  "pin-project-lite",
  "slab",
- "tokio-macros",
-]
-
-[[package]]
-name = "tokio-macros"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0c3acc6aa564495a0f2e1d59fab677cd7f81a19994cfc7f3ad0e64301560389"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

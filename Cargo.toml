@@ -1,6 +1,6 @@
 [package]
 name = "lighthouse"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Finnkauski <iwiivi@gmail.com>"]
 description="Command line tool and Philips Hue light control framework wrapping up the Hue API"
 license="AGPL-3.0-or-later"
@@ -17,7 +17,7 @@ persist = ["ron"]
 
 [dependencies]
 reqwest = {version = "0.10.6", features=["json"], default-features=false}
-tokio = {version = "0.2", features=["macros", "rt-core", "stream"]}
+tokio = {version = "0.2", features=["rt-core", "stream"]}
 futures = "0.3.5"
 ssdp = "0.7.0"
 url = "2.1.1"
