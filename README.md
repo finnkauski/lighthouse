@@ -2,13 +2,11 @@
 
 # Lighthouse
 
-Control your Philips Hue lights with this API wrapper!
+Control your Philips Hue lights with this API wrapper! 
 
+**NOTE:**
 This wrapper is under active redevelopment, see the older commits in order to get
-the previous iterations of the API.
-
-Current goals is to slim this down, make this more async and to make a nicer command line
-tool.
+the previous iterations of the API. Also this is not a complete API wrapper for the HUE API as I do not have the time to expand the wrapper. If you would like to contribute please consider making a PR.
 
 ## Also see:
 
@@ -20,7 +18,7 @@ allowing you to script your lights into lightshows (uses older version of the li
 
 ## Usage
 
-Simply add `lighthouse` to the `Cargo.toml` and simply go from there.
+Simply add `lighthouse` to the `Cargo.toml` and go from there.
 
 ## Command line tool
 
