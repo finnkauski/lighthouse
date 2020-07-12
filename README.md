@@ -20,6 +20,12 @@ allowing you to script your lights into lightshows (uses older version of the li
 
 Simply add `lighthouse` to the `Cargo.toml` and go from there.
 
+**NOTE:**
+The features for color conversion and serialisation to and from files are now behind 
+feature flags. Available flags are:
+- color - adds the color conversion module
+- persist - adds the ability to serialise to and from files and also to create bridges from environment variables
+
 ## Command line tool
 
 The previous releases of this library came with a binary that allowed users to control their lights from the command line.
