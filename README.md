@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/finnkauski/lighthouse.svg?branch=main)](https://travis-ci.com/finnkauski/lighthouse)
 <p align="left"><img align="left" src="meta/logo.png" width="240px"></p>
 
 # Lighthouse
