@@ -1,3 +1,7 @@
+/// # Helpers
+///
+/// The helpers module contains functions that assist the rest of the codebase
+/// it is unlikely that any of these internals will have to be used manually.
 pub mod helpers {
     // imports
     use std::net::IpAddr;
@@ -94,6 +98,9 @@ pub mod helpers {
     }
 }
 
+/// # Bridge module
+///
+/// This module contains the Bridge and related functionality
 pub mod bridge {
     // imports
     use super::{
@@ -105,6 +112,16 @@ pub mod bridge {
     use tokio::runtime::Runtime;
     use url::Url;
 
+    /// # Take it to the Bridge!
+    ///
+    /// This is the Bridge object - the core of the library.
+    ///
+    /// This is the manager struct that implements all the core methods that are required to interact
+    /// with the Hue Bridge. It has a bunch of convenience functions such as sending state, scanning for lights,
+    /// getting the information about your existing lights and finding bridge IP addresses with SSDP.
+    ///
+    /// Additional features can be enabled:
+    /// - `persist` - enables building a bridge from environment variables and serialising to file
     #[derive(Debug)]
     pub struct Bridge {
         pub target: Url,
@@ -112,13 +129,6 @@ pub mod bridge {
         runtime: Runtime,
     }
 
-    /// # Take it to the Bridge!
-    ///
-    /// This is the Bridge object - the core of the library.
-    ///
-    /// This is the manager struct that implements all the core methods that are required to interact
-    /// with the HueBridge. It has a bunch of convenience functions such as sending state, scanning for lights,
-    /// getting the information about your existing lights and finding bridge IP addresses with SSDP.
     impl Bridge {
         /// Constructor for a bridge from and IP and a token
         pub fn new(ip: IpAddr, token: &str) -> Result<Self, ()> {
@@ -183,6 +193,14 @@ pub mod bridge {
         /// provided.
         fn get_endpoint(&self, s: &str, method: AllowedMethod) -> RequestTarget {
             (self.target.join(s).unwrap(), method)
+        }
+
+        /// Method to interactively register a new bridge.
+        ///
+        /// This interacts with the user and guides them through the authentication flow to instantiate
+        /// a new bridge.
+        pub fn register() -> Self {
+            todo!()
         }
 
         /// Method to find bridge IP addressed on the network.
@@ -282,6 +300,10 @@ pub mod bridge {
     }
 }
 
+/// # Lights module
+///
+/// This module contains the core representations for the lights and responses
+/// from the API.
 pub mod lights {
     // imports
     use serde::{Deserialize, Serialize};
@@ -427,6 +449,77 @@ pub mod lights {
     }};
 
 }
+}
+
+/// # Color module (UNDERDEVELOPED)
+///
+/// This module (gated under the `color` feature) contains helpers in converting
+/// colors to the required representations for the HUE API.
+///
+/// **NOTE:** Currently untested and work in progress. If you want to please submit
+/// a PR with improvements.
+#[cfg(feature = "color")]
+pub mod color {
+    use palette::{rgb::Srgb, Hsl};
+
+    /// Convert from 'rgb' to the 'xy' values that can be sent to the
+    /// hue lights. Does not internally use color gamut.
+    ///
+    /// **NOTE:** Currently no gamma correction is used. This was implemented based on the
+    /// gist found [here](https://gist.github.com/popcorn245/30afa0f98eea1c2fd34d).
+    pub fn rgb_to_xy(rgb: Vec<u8>) -> [f32; 2] {
+        // NOTE: more information https://gist.github.com/popcorn245/30afa0f98eea1c2fd34d
+        let standardise = |c: u8| {
+            let val = (c as f32) / 255.0;
+            if val > 0.04045 {
+                ((val + 0.055) / (1.0 + 0.055)).powf(2.4)
+            } else {
+                val / 12.92
+            }
+        };
+
+        let cnv: Vec<f32> = rgb.into_iter().map(standardise).collect();
+        let (red, green, blue) = (cnv[0], cnv[1], cnv[2]);
+
+        let x = red * 0.664_511 + green * 0.154_324 + blue * 0.162_028;
+        let y = red * 0.283_881 + green * 0.668_433 + blue * 0.047_685;
+        let z = red * 0.000_088 + green * 0.072_310 + blue * 0.986_039;
+        let denominator = x + y + z;
+
+        // TODO: if the z is truly the brightness we need to return it
+        [x / denominator, y / denominator]
+    }
+
+    /// Convert from 'rgb' to the 'hsl' values that can be sent to the
+    /// hue lights.
+    pub fn rgb_to_hsl(rgb: Vec<u8>) -> (u16, u8, u8) {
+        let standard: Vec<f32> = rgb
+            .into_iter()
+            .map(|val: u8| (val as f32) / 255.0)
+            .collect();
+        let (red, green, blue) = (standard[0], standard[1], standard[2]);
+        let hsl: Hsl = Srgb::new(red, green, blue).into();
+        let (h, s, l) = hsl.into_components();
+        (
+            (h.to_positive_degrees() / 360.0 * 65535.0) as u16,
+            (s * 254.0) as u8,
+            (l * 254.0) as u8,
+        )
+    }
+
+    /// Convert hex color to `hsl`
+    pub fn hex_to_hsl(s: &str) -> Result<(u16, u8, u8), std::num::ParseIntError> {
+        let rgb = hex_to_rgb(s)?;
+        Ok(rgb_to_hsl(rgb))
+    }
+
+    /// Convert hex color string to `rgb`
+    pub fn hex_to_rgb(s: &str) -> Result<Vec<u8>, std::num::ParseIntError> {
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
+            .collect()
+    }
 }
 
 mod tests {
