@@ -6,7 +6,7 @@ fn main() {
     let mut b = bridge::Bridge::new("<SOME-IP>".parse().unwrap(), "<SOME-KEY>").unwrap();
 
     // See if the user passed on or of
-    let on_off = match env::args().collect::<Vec<String>>()[1] {
+    let on_off = match &env::args().collect::<Vec<String>>()[1][..] {
         "on" => true,
         "off" => false,
         _ => panic!("Unknown command. Use: on / off"),
