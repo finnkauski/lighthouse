@@ -5,7 +5,7 @@ fn main() {
     use std::env;
 
     // Create bridge from an IP and a Key.
-    let mut b = bridge::Bridge::new("<SOME-IP>".parse().unwrap(), "<SOME-KEY>".to_owned()).unwrap();
+    let mut b = bridge::Bridge::new("<some-ip>".parse().unwrap(), "<some-key>".to_owned()).unwrap();
 
     // See if the user passed on or of
     let on_off = match &env::args().collect::<Vec<String>>()[1][..] {
