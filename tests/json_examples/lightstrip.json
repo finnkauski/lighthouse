@@ -1,0 +1,56 @@
+{
+  "capabilities": {
+    "certified": true,
+    "control": {
+      "colorgamut": [
+        [0.6915, 0.3083],
+        [0.17, 0.7],
+        [0.1532, 0.0475]
+      ],
+      "colorgamuttype": "C",
+      "ct": {
+        "max": 500,
+        "min": 153
+      },
+      "maxlumen": 1600,
+      "mindimlevel": 25
+    },
+    "streaming": {
+      "proxy": true,
+      "renderer": true
+    }
+  },
+  "config": {
+    "archetype": "huelightstrip",
+    "direction": "omnidirectional",
+    "function": "mixed",
+    "startup": {
+      "configured": true,
+      "mode": "safety"
+    }
+  },
+  "manufacturername": "Signify Netherlands B.V.",
+  "modelid": "LST002",
+  "name": "xxx",
+  "productname": "Hue lightstrip plus",
+  "state": {
+    "alert": "none",
+    "bri": 1,
+    "colormode": "xy",
+    "ct": 396,
+    "effect": "none",
+    "hue": 7790,
+    "mode": "homeautomation",
+    "on": false,
+    "reachable": true,
+    "sat": 160,
+    "xy": [0.4764, 0.4087]
+  },
+  "swupdate": {
+    "lastinstall": "2020-03-04T13:57:09",
+    "state": "noupdates"
+  },
+  "swversion": "5.130.1.30000",
+  "type": "Extended color light",
+  "uniqueid": "xxx"
+}
