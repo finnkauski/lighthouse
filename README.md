@@ -32,9 +32,9 @@ And then in your application:
 ```rust
 use std::net::{IpAddr, Ipv4Addr};
 use lighthouse::bridge::Bridge;
-# Acquire your IP address and substitute here
+// Acquire your IP address and substitute here
 let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 10));
-# Get an API token from your bridge, requires proof of physical access
+// Get an API token from your bridge, requires proof of physical access
 let bridge_token = String::from("my-example-token");
 let mut bridge = Bridge::new(ip_addr, bridge_token).unwrap();
 let lights = bridge.scan();
