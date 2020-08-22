@@ -232,7 +232,15 @@ pub mod bridge {
         ///
         /// This interacts with the user and guides them through the authentication flow to instantiate
         /// a new bridge.
-        pub fn try_register(interactive: bool) -> Result<Self, String> {
+        ///
+        /// The interactive parameter, if true, will enable printing out of instructions to
+        /// stdout.
+        ///
+        /// This returns a [Bridge](struct.Bridge.html) and a token. The reason for a
+        /// returned token is that a user might want to store a token, however the struct
+        /// field is private by default on the bridge, so we expose the token upon registration
+        /// for the user to store it as they might see fit.
+        pub fn try_register(interactive: bool) -> Result<(Self, String), String> {
             use serde_json::Value;
 
             let client = reqwest::Client::new();
@@ -295,13 +303,16 @@ pub mod bridge {
             let target = generate_target(*bridge_ip, &token)
                 .expect("Could not create the required target after registration");
 
-            Ok(Bridge {
-                target,
-                ip: *bridge_ip,
+            Ok((
+                Bridge {
+                    target,
+                    ip: *bridge_ip,
+                    token: token.clone(),
+                    client,
+                    runtime,
+                },
                 token,
-                client,
-                runtime,
-            })
+            ))
         }
 
         /// Method to find bridge IP addressed on the network.

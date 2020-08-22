@@ -1,9 +1,10 @@
 [![Build Status](https://travis-ci.com/finnkauski/lighthouse.svg?branch=main)](https://travis-ci.com/finnkauski/lighthouse)
+
 <p align="left"><img align="left" src="meta/logo.png" width="240px"></p>
 
 # Lighthouse
 
-Control your Philips Hue lights with this API wrapper! 
+Control your Philips Hue lights with this API wrapper!
 
 **NOTE:**
 This wrapper is under active redevelopment, see the older commits in order to get
@@ -45,14 +46,15 @@ If you haven't set up a user token or discovered your bridge yet, you can do so 
 use lighthouse::*;
 // Discovers the bridge's IP and registers a user token
 // This requires physical access to the Bridge!
-let b = bridge::Bridge::try_register(true);
+let (b, token) = bridge::Bridge::try_register(true).unwrap();
 ```
 
 See the `./examples/` directory for more examples.
 
 **NOTE:**
-The features for color conversion and serialisation to and from files are now behind 
+The features for color conversion and serialisation to and from files are now behind
 feature flags. Available flags are:
+
 - color - adds the color conversion module
 - persist - adds the ability to serialise to and from files and also to create bridges from environment variables
 
