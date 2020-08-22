@@ -88,14 +88,14 @@ fn test_from_state() {
     use lighthouse::{lights::*, *};
     let mut s = State {
         on: true,
-        bri: 100,
-        hue: 240,
-        sat: 20,
-        effect: String::from("none"),
-        xy: [2.0, 2.0],
-        ct: 200,
+        bri: Some(100),
+        hue: Some(240),
+        sat: Some(20),
+        effect: Some(String::from("none")),
+        xy: Some([2.0, 2.0]),
+        ct: Some(200),
         alert: String::from("select"),
-        colormode: String::from("somemode"),
+        colormode: Some(String::from("somemode")),
         mode: String::from("mode"),
         reachable: true,
     };
