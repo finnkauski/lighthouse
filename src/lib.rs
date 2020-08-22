@@ -8,20 +8,21 @@
 //!
 //! ## Constucting the Bridge client and finding your lights
 //!
-//! ```rust
+//! ```no_run
+//! use std::net::{IpAddr, Ipv4Addr};
 //! use lighthouse::bridge::Bridge;
-//! let ip_addr = std::net::Ipv4Addr::new(192.168.1.10);
-//! let bridge_token = String::new("my-example-token");
-//! let bridge = Bridge::new(ip_addr, bridge_token).unwrap();
+//! let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 10));
+//! let bridge_token = String::from("my-example-token");
+//! let mut bridge = Bridge::new(ip_addr, bridge_token).unwrap();
 //! let lights = bridge.scan();
 //! ```
 //!
 //! ## Controlling individual lights
 //!
-//! ```rust
+//! ```no_run
 //! use lighthouse::state;
 //! use lighthouse::bridge::Bridge;
-//! let bridge = Bridge::new("192.168.1.10".parse(), "token").unwrap();
+//! let mut bridge = Bridge::new("192.168.1.10".parse().unwrap(), "token".to_string()).unwrap();
 //! bridge.state_to(1, state!(on: true, bri: 128));
 //! ```
 
