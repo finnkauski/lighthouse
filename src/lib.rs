@@ -455,7 +455,8 @@ pub mod lights {
     #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct State {
         pub on: bool,
-        pub bri: u8,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub bri: Option<u8>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub hue: Option<u16>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -477,7 +478,7 @@ pub mod lights {
         fn from(state: State) -> Self {
             Self {
                 on: Some(state.on),
-                bri: Some(state.bri),
+                bri: state.bri,
                 hue: state.hue,
                 sat: state.sat,
                 effect: state.effect,
