@@ -456,13 +456,19 @@ pub mod lights {
     pub struct State {
         pub on: bool,
         pub bri: u8,
-        pub hue: u16,
-        pub sat: u8,
-        pub effect: String,
-        pub xy: [f32; 2],
-        pub ct: u32,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub hue: Option<u16>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub sat: Option<u8>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub effect: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub xy: Option<[f32; 2]>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub ct: Option<u32>,
         pub alert: String,
-        pub colormode: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub colormode: Option<String>,
         pub mode: String,
         pub reachable: bool,
     }
@@ -472,13 +478,13 @@ pub mod lights {
             Self {
                 on: Some(state.on),
                 bri: Some(state.bri),
-                hue: Some(state.hue),
-                sat: Some(state.sat),
-                effect: Some(state.effect),
-                xy: Some(state.xy),
+                hue: state.hue,
+                sat: state.sat,
+                effect: state.effect,
+                xy: state.xy,
                 alert: None,
                 transitiontime: Some(1),
-                colormode: Some(state.colormode),
+                colormode: state.colormode,
             }
         }
     }
