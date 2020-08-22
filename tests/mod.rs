@@ -109,6 +109,7 @@ fn test_from_state() {
 }
 
 #[test]
+#[cfg(feature = "persist")]
 fn test_bridge_serialization() {
     use lighthouse::*;
 
