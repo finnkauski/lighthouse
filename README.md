@@ -19,7 +19,23 @@ allowing you to script your lights into lightshows (uses older version of the li
 
 ## Usage
 
-Simply add `lighthouse` to the `Cargo.toml` and go from there.
+Adding the dependency:
+
+```toml
+[dependencies]
+lighthouse = "0.2"
+```
+
+And then in your application:
+
+```rust
+# Acquire your IP address and substitute here
+let ip_addr = std::net::Ipv4Addr::new(192.168.1.10);
+# Get an API token from your bridge, requires proof of physical access
+let bridge_token = String::new("my-example-token");
+let bridge = Bridge::new(ip_addr, bridge_token).unwrap();
+let lights = bridge.scan();
+```
 
 **NOTE:**
 The features for color conversion and serialisation to and from files are now behind 
