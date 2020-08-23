@@ -10,14 +10,6 @@ Control your Philips Hue lights with this API wrapper!
 This wrapper is under active redevelopment, see the older commits in order to get
 the previous iterations of the API. Also this is not a complete API wrapper for the HUE API as I do not have the time to expand the wrapper. If you would like to contribute please consider making a PR.
 
-## Also see:
-
-[lighthouse.el](https://github.com/finnkauski/lighthouse.el) - an Emacs package
-wrapping the functionality of `lighthouse` (uses older version of the library)
-
-[lightshow](https://github.com/finnkauski/lightshow) - A simple scripting language
-allowing you to script your lights into lightshows (uses older version of the library)
-
 ## Usage
 
 Adding the dependency:
@@ -63,6 +55,14 @@ feature flags. Available flags are:
 The previous releases of this library came with a binary that allowed users to control their lights from the command line.
 The crate has been refactored and simplified. The binary will have to be refactored as well. However the priority is to
 finished a more sensible API wrapper before moving onto the binary.
+
+## Also see:
+
+[lighthouse.el](https://github.com/finnkauski/lighthouse.el) - an Emacs package
+wrapping the functionality of `lighthouse` (uses older version of the library)
+
+[lightshow](https://github.com/finnkauski/lightshow) - A simple scripting language
+allowing you to script your lights into lightshows (uses older version of the library)
 
 ## Contributions
 
