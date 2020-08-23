@@ -28,3 +28,16 @@ serde_json = "1.0.56"
 # Optional dependencies
 palette = {version ="0.5.0" , optional = true}
 
+[[example]]
+name = "registration"
+path = "examples/registration.rs"
+
+[[example]]
+name = "basic-cli"
+path = "examples/basic_cli.rs"
+
+[[example]]
+name = "save_bridge"
+path = "examples/save_bridge.rs"
+required-features = ["persist"]
+
