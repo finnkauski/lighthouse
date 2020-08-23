@@ -6,6 +6,8 @@
 
 Control your Philips Hue lights with this API wrapper!
 
+
+
 **NOTE:**
 This wrapper is under active redevelopment, see the older commits in order to get
 the previous iterations of the API. Also this is not a complete API wrapper for the HUE API as I do not have the time to expand the wrapper. If you would like to contribute please consider making a PR.
