@@ -37,7 +37,7 @@ let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 10));
 // Get an API token from your bridge, requires proof of physical access
 let bridge_token = String::from("my-example-token");
 let mut bridge = Bridge::new(ip_addr, bridge_token).unwrap();
-let lights = bridge.scan();
+let lights = bridge.get_lights();
 ```
 
 If you haven't set up a user token or discovered your bridge yet, you can do so with the interactive `try_register` function:
