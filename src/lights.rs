@@ -106,7 +106,7 @@ impl std::fmt::Display for Light {
 }
 
 /// Light enum representing the complete state of possible lights
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum Light {
     LightBulb {

@@ -6,6 +6,7 @@ use super::{
     helpers::{network::*, *},
     lights::*,
 };
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::net::IpAddr;
 use tokio::runtime::Runtime;
@@ -27,7 +28,8 @@ pub struct Bridge {
     ip: IpAddr,
     token: String,
     client: reqwest::Client,
-    runtime: Runtime,
+    runtime: RefCell<Runtime>,
+    lights: RefCell<BTreeMap<u8, Light>>,
 }
 
 impl Bridge {
@@ -35,39 +37,57 @@ impl Bridge {
     pub fn new(ip: IpAddr, token: String) -> Result<Self, ()> {
         let target = generate_target(ip, &token)?;
         let client = reqwest::Client::new();
-        let runtime = tokio::runtime::Builder::new()
-            .basic_scheduler()
-            .enable_all()
-            .build()
-            .expect("Could not create tokio runtime during the creation of the Bridge");
+        let runtime = RefCell::new(
+            tokio::runtime::Builder::new()
+                .basic_scheduler()
+                .enable_all()
+                .build()
+                .expect("Could not create tokio runtime during the creation of the Bridge"),
+        );
+        let lights = RefCell::new(BTreeMap::new());
         Ok(Bridge {
             target,
             ip,
             token,
             client,
             runtime,
+            lights,
         })
     }
 
     /// Scan the existing lights on the network. Returns the light id
     /// mapped to the light object.
-    pub fn scan(&mut self) -> BTreeMap<u8, Light> {
+    pub fn scan(&self) -> BTreeMap<u8, Light> {
         let endpoint = self.get_endpoint("./lights", AllowedMethod::GET);
         let fut = send_request(endpoint, None, &self.client);
         let lights: BTreeMap<u8, Light> = self
             .runtime
+            .borrow_mut()
             .block_on(async { fut.await?.json().await })
             .expect("Could not completely decode/send request");
         lights
     }
 
-    /// Sends a state to a given light by its ID on the system.
+    /// Updates the lights in the system by scanning them
+    fn update_lights(&self) {
+        self.lights.replace(self.scan());
+    }
+
+    /// Get the lights from the bridge struct. It performs a rescan and
+    /// updates a private lights field in the Bridge.
+    pub fn get_lights(&self) -> BTreeMap<u8, Light> {
+        self.update_lights();
+        self.lights.borrow().clone()
+    }
+
+    /// sends a state to a given light by its ID on the system.
     ///
     /// This is useful when you want to send a given state to one light
     /// on the network.
     pub fn state_to(&mut self, id: u8, new_state: &SendableState) -> reqwest::Response {
         let endpoint = self.get_endpoint(&format!("./lights/{}/state", id)[..], AllowedMethod::PUT);
         self.runtime
+            .borrow_mut()
             .block_on(send_request(endpoint, Some(new_state), &self.client))
             .expect(&format!("Could not send state to light: {}", id)[..])
     }
@@ -85,6 +105,7 @@ impl Bridge {
         let states = new_states.into_iter().map(Some);
 
         self.runtime
+            .borrow_mut()
             .block_on(send_requests(endpoints, states, &self.client))
             .into_iter()
             .collect()
@@ -176,7 +197,8 @@ impl Bridge {
                 ip: *bridge_ip,
                 token: token.clone(),
                 client,
-                runtime,
+                runtime: RefCell::new(runtime),
+                lights: RefCell::new(Default::default()),
             },
             token,
         ))
@@ -224,6 +246,7 @@ impl Bridge {
         );
         match self
             .runtime
+            .borrow_mut()
             .block_on(async { fut.await.expect("Could not perform request").json().await })
         {
             Ok(resp) => {
