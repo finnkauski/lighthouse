@@ -28,6 +28,7 @@ pub struct Bridge {
     ip: IpAddr,
     token: String,
     client: reqwest::Client,
+    // TODO: The use of refcells here does not make it multithread safe. Might be worth adding that later with a feature flag?
     runtime: RefCell<Runtime>,
     lights: RefCell<BTreeMap<u8, Light>>,
 }
@@ -57,7 +58,7 @@ impl Bridge {
 
     /// Scan the existing lights on the network. Returns the light id
     /// mapped to the light object.
-    pub fn scan(&self) -> BTreeMap<u8, Light> {
+    fn scan(&self) -> BTreeMap<u8, Light> {
         let endpoint = self.get_endpoint("./lights", AllowedMethod::GET);
         let fut = send_request(endpoint, None, &self.client);
         let lights: BTreeMap<u8, Light> = self
@@ -84,7 +85,7 @@ impl Bridge {
     ///
     /// This is useful when you want to send a given state to one light
     /// on the network.
-    pub fn state_to(&mut self, id: u8, new_state: &SendableState) -> reqwest::Response {
+    pub fn state_to(&self, id: u8, new_state: &SendableState) -> reqwest::Response {
         let endpoint = self.get_endpoint(&format!("./lights/{}/state", id)[..], AllowedMethod::PUT);
         self.runtime
             .borrow_mut()
@@ -94,7 +95,7 @@ impl Bridge {
 
     /// Send a state object to all lights on the network.
     pub fn state_to_multiple<'a>(
-        &mut self,
+        &self,
         ids: impl IntoIterator<Item = u8>,
         new_states: impl IntoIterator<Item = &'a SendableState>,
     ) -> Result<Vec<reqwest::Response>, reqwest::Error> {
@@ -238,25 +239,9 @@ impl Bridge {
     ///
     /// Namely, asks for all available lights and print a JSON representation
     /// of the system to STDOUT.
-    pub fn system_info(&mut self) {
-        let fut = send_request(
-            self.get_endpoint("./lights", AllowedMethod::GET),
-            None,
-            &self.client,
-        );
-        match self
-            .runtime
-            .borrow_mut()
-            .block_on(async { fut.await.expect("Could not perform request").json().await })
-        {
-            Ok(resp) => {
-                let r: serde_json::Value = resp;
-                println!("{}", serde_json::to_string_pretty(&r).unwrap());
-            }
-            Err(e) => {
-                println!("Could not send the get request: {}", e);
-            }
-        };
+    pub fn system_info(&self) {
+        let lights = self.scan();
+        println!("{}", serde_json::to_string_pretty(&lights).unwrap());
     }
 
     /// Conditional feature:

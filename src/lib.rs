@@ -11,7 +11,7 @@
 //! let ip_addr = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 10));
 //! let bridge_token = String::from("my-example-token");
 //! let mut bridge = Bridge::new(ip_addr, bridge_token).unwrap();
-//! let lights = bridge.scan();
+//! let lights = bridge.get_lights();
 //! ```
 //!
 //! ## Controlling individual lights
