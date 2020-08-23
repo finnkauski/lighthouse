@@ -30,7 +30,9 @@ pub struct Bridge {
     client: reqwest::Client,
     // TODO: The use of refcells here does not make it multithread safe. Might be worth adding that later with a feature flag?
     runtime: RefCell<Runtime>,
-    lights: RefCell<BTreeMap<u8, Light>>,
+    // TODO: Unclear if this is the best way to structure this. Should refcell be inside?
+    lights: RefCell<Option<BTreeMap<u8, Light>>>,
+    light_ids: RefCell<Option<Vec<u8>>>,
 }
 
 impl Bridge {
@@ -45,7 +47,8 @@ impl Bridge {
                 .build()
                 .expect("Could not create tokio runtime during the creation of the Bridge"),
         );
-        let lights = RefCell::new(BTreeMap::new());
+        let lights = RefCell::new(None);
+        let light_ids = RefCell::new(None);
         Ok(Bridge {
             target,
             ip,
@@ -53,6 +56,7 @@ impl Bridge {
             client,
             runtime,
             lights,
+            light_ids,
         })
     }
 
@@ -69,19 +73,32 @@ impl Bridge {
         lights
     }
 
-    /// Updates the lights in the system by scanning them
-    fn update_lights(&self) {
-        self.lights.replace(self.scan());
+    /// Updates the lights in the system by scanning them if
+    /// the user either forces it through the bool parameter or
+    /// the inner option of the RefCell is None.
+    fn update_lights(&self, force: bool) {
+        if self.lights.borrow().is_none() || force {
+            let lights = self.scan();
+            let ids = lights.keys().cloned().collect();
+            self.lights.replace(Some(lights));
+            self.light_ids.replace(Some(ids));
+        }
     }
 
     /// Get the lights from the bridge struct. It performs a rescan and
-    /// updates a private lights field in the Bridge.
+    /// updates a private lights field in the Bridge if that has not been
+    /// done yet.
+    ///
+    /// This performs a clone rather than returning a reference.
     pub fn get_lights(&self) -> BTreeMap<u8, Light> {
-        self.update_lights();
-        self.lights.borrow().clone()
+        self.update_lights(false);
+        self.lights
+            .borrow()
+            .clone()
+            .expect("This should always be some since we update before accessing")
     }
 
-    /// sends a state to a given light by its ID on the system.
+    /// Sends a state to a given light by its ID on the system.
     ///
     /// This is useful when you want to send a given state to one light
     /// on the network.
@@ -91,6 +108,38 @@ impl Bridge {
             .borrow_mut()
             .block_on(send_request(endpoint, Some(new_state), &self.client))
             .expect(&format!("Could not send state to light: {}", id)[..])
+    }
+
+    /// Sends a state to all lights in the system
+    ///
+    /// The method sends a given state change to all possible lights on the system.
+    /// It also performs an update using `Self::update_lights` in order to make sure all
+    /// lights have been retrieved at least once.
+    pub fn to_all(
+        &self,
+        new_state: &SendableState,
+    ) -> Result<Vec<reqwest::Response>, reqwest::Error> {
+        self.update_lights(false);
+        let endpoints: Vec<_> = self
+            .light_ids // get lights
+            .borrow()
+            .as_ref()
+            .map(|ids| {
+                ids.iter().map(|id| {
+                    self.get_endpoint(&format!("./lights/{}/state", id)[..], AllowedMethod::PUT)
+                })
+            })
+            .expect("No values in lights")
+            .collect();
+        self.runtime
+            .borrow_mut()
+            .block_on(send_requests(
+                endpoints,
+                std::iter::repeat(Some(new_state)),
+                &self.client,
+            ))
+            .into_iter()
+            .collect()
     }
 
     /// Send a state object to all lights on the network.
@@ -199,7 +248,8 @@ impl Bridge {
                 token: token.clone(),
                 client,
                 runtime: RefCell::new(runtime),
-                lights: RefCell::new(Default::default()),
+                lights: RefCell::new(None),
+                light_ids: RefCell::new(None),
             },
             token,
         ))
