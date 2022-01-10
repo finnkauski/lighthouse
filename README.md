@@ -18,7 +18,7 @@ Adding the dependency:
 
 ```toml
 [dependencies]
-lighthouse = "0.2"
+lighthouse = "0.2.1"
 ```
 
 And then in your application:
@@ -40,7 +40,7 @@ If you haven't set up a user token or discovered your bridge yet, you can do so 
 use lighthouse::*;
 // Discovers the bridge's IP and registers a user token
 // This requires physical access to the Bridge!
-let (b, token) = bridge::Bridge::try_register(true).unwrap();
+let bridge = bridge::Bridge::try_register(true).unwrap();
 ```
 
 See the `./examples/` directory for more examples.
